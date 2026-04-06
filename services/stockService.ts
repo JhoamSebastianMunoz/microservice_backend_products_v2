@@ -15,14 +15,19 @@ class StockService{
             throw { status: 404, message: "Producto no encontrado" };
         }
     
-        // Consultar microservicio de usuarios para validar el usuario y su rol
+        // TEMPORALMENTE DESHABILITADO: Consultar microservicio de usuarios para validar el usuario y su rol
+        // Código original comentado para fácil reactivación futura
+        /*
         const response = await axios.get(`${process.env.USUARIOS_SERVICE_URL}${id_usuario}`);
         const usuario = response.data;
         
-    
         if (!usuario) {
             throw { status: 403, message: "Usuario no encontrado" };
         }
+        */
+        
+        // TEMPORAL: Omitir validación de usuario y continuar con el registro
+        console.log(`TEMPORAL: Omitiendo validación de usuario ${id_usuario} - Registro permitido`);
     
         // Registrar stock y actualizar cantidad en productos
         await StockRepository.registrarStockDB(dataStock, id_usuario);
@@ -40,7 +45,9 @@ class StockService{
         // Obtener los IDs únicos de usuarios para optimizar las consultas
         const usuariosIds = [...new Set(historial.map((item: any) => item.id_usuario))];
     
-        // Consultar el microservicio de usuarios para obtener los nombres completos
+        // TEMPORALMENTE DESHABILITADO: Consultar el microservicio de usuarios para obtener los nombres completos
+        // Código original comentado para fácil reactivación futura
+        /*
         const usuariosData = await Promise.all(
             usuariosIds.map(async (id) => {
                 try {
@@ -53,6 +60,13 @@ class StockService{
                 }
             })
         );
+        */
+        
+        // TEMPORAL: Asignar nombres genéricos para todos los usuarios
+        const usuariosData = usuariosIds.map(id => ({
+            id_usuario: id, 
+            nombre_completo: `Usuario Temporal ${id}`
+        }));
     
         // Crear un diccionario para búsqueda rápida
         const usuariosMap = new Map(usuariosData.map(user => [user.id_usuario, user.nombre_completo]));
@@ -77,13 +91,22 @@ class StockService{
         }
     
         try {
-            // Obtener el nombre del usuario desde el microservicio
+            // TEMPORALMENTE DESHABILITADO: Obtener el nombre del usuario desde el microservicio
+            // Código original comentado para fácil reactivación futura
+            /*
             const response = await axios.get(`${process.env.USUARIOS_SERVICE_URL}${detalleIngreso.id_usuario}`);
             const usuario = response.data;
-    
+            
             return {
                 ...detalleIngreso,
                 nombre_completo: usuario?.nombreCompleto || "Desconocido"
+            };
+            */
+            
+            // TEMPORAL: Retornar datos con nombre genérico
+            return {
+                ...detalleIngreso,
+                nombre_completo: `Usuario Temporal ${detalleIngreso.id_usuario}`
             };
         } catch (error) {
             console.error(`Error obteniendo datos del usuario ${detalleIngreso.id_usuario}:`, error);

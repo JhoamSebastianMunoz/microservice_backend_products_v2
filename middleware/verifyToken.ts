@@ -14,6 +14,10 @@ interface JwtPayload {
 }
 
 const verifyToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    // TEMPORALMENTE DESHABILITADO: Validación JWT para permitir acceso sin autenticación
+    // Código original comentado para fácil reactivación futura
+    
+    /*
     let authorization = req.get('Authorization');    
     if (authorization) {
         const token = authorization.split(' ')[1];
@@ -37,7 +41,7 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction): Pro
         } catch (error) {
             res.status(403).json({
                 status: 'No autorizado',
-                error: (error as Error).message // Mensaje de error detallado
+                error: (error as Error).message
             });
             return;
         }
@@ -47,6 +51,16 @@ const verifyToken = async (req: Request, res: Response, next: NextFunction): Pro
         });
         return;
     }
+    */
+
+    // TEMPORAL: Permitir acceso sin validación de token
+    // Asignar valores por defecto para compatibilidad con otros middleware
+    req.body.cedula = "temp_user";
+    req.body.role = "ADMINISTRADOR"; // Rol con permisos máximos para testing
+    req.body.contraseña = "temp_password";
+    req.body.id_usuario = 1;
+
+    next();
 }
 
 export default verifyToken;
