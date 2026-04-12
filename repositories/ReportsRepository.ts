@@ -4,10 +4,10 @@ import GetProduct from "../Dto/productDto/GetProductDto";
 class ReportsRepository{
     static async getAllProductsLowStock(umbral: number = 15): Promise<GetProduct[]> {
         const sql = `
-            SELECT * FROM productos WHERE cantidad_ingreso < ?
+            SELECT * FROM productos WHERE cantidad_ingreso < $1
         `;
-        const [rows] = await db.execute(sql, [umbral]); 
-        return rows as GetProduct[];
+        const result = await db.query(sql, [umbral]); 
+        return result.rows as GetProduct[];
     }
 }
 
