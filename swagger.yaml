@@ -1,14 +1,23 @@
 openapi: 3.0.0
 info:
-  title: API de Productos TATSoft
-  description: API para la gestión de productos y sus imágenes
-  version: 1.0.0
+  title: API de Productos TATSoft v2
+  description: API RESTful para gestión de productos con endpoints v2 mejorados y compatibilidad con v1
+  version: 2.0.0
+  contact:
+    name: Soporte TATSoft
+    email: support@tatsoft.com
+    url: https://tatsoft.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 
 servers:
-  - url: http://localhost:10104
-    description: Servidor local
-  - url: https://backendproducts-eefufaaeaahzauee.eastus-01.azurewebsites.net
+  - url: http://localhost:10102/api/v2
+    description: Servidor de desarrollo local
+  - url: https://backendproducts-eefufaaeaahzauee.eastus-01.azurewebsites.net/api/v2
     description: Servidor de producción
+  - url: http://localhost:10102
+    description: Endpoints v1 heredados (depreciados)
 
 components:
   securitySchemes:
@@ -18,7 +27,7 @@ components:
       bearerFormat: JWT
 
   schemas:
-    Product:
+    Producto:
       type: object
       properties:
         nombre_producto:
@@ -40,8 +49,8 @@ components:
           type: string
           description: ID de la imagen del producto
         id_categoria:
-          type: numbre
-          description: ID de la categoria del producto
+          type: integer
+          description: ID de la categoría del producto
 
     Categoria:
       type: object
@@ -63,7 +72,7 @@ components:
           format: date-time
           description: Fecha y hora de creación de la categoría
           example: "2025-03-10T15:30:00Z"
-    
+
     Error:
       type: object
       properties:
@@ -73,15 +82,1125 @@ components:
         details:
           type: string
           description: Detalles adicionales del error
+
+    # V2 API Schemas
+    ProductoV2:
+      type: object
+      properties:
+        id_producto:
+          type: integer
+          description: ID único del producto
+          example: 1
+        nombre_producto:
+          type: string
+          minLength: 2
+          maxLength: 120
+          description: Nombre del producto
+          example: "Laptop Gaming Pro"
+        precio:
+          type: number
+          format: float
+          description: Precio del producto
+          example: 2500.00
+          minimum: 0
+        descripcion:
+          type: string
+          maxLength: 255
+          description: Descripción detallada del producto
+          example: "Laptop de alto rendimiento para gaming"
+        id_categoria:
+          type: integer
+          description: ID de la categoría del producto
+          example: 1
+        id_imagen:
+          type: integer
+          description: ID de la imagen asociada al producto
+          example: 1
+          nullable: true
+        stock_actual:
+          type: integer
+          description: Cantidad actual en stock
+          example: 50
+          minimum: 0
+        activo:
+          type: boolean
+          description: Estado del producto (activo/inactivo)
+          example: true
+          default: true
+        fecha_creacion:
+          type: string
+          format: date-time
+          description: Fecha de creación del producto
+          readOnly: true
+        fecha_actualizacion:
+          type: string
+          format: date-time
+          description: Fecha de última actualización
+          readOnly: true
+
+    CategoriaV2:
+      type: object
+      properties:
+        id_categoria:
+          type: integer
+          description: ID único de la categoría
+          example: 1
+        nombre_categoria:
+          type: string
+          description: Nombre de la categoría
+          example: "Electrónicos"
+        descripcion:
+          type: string
+          description: Descripción detallada de la categoría
+          example: "Dispositivos electrónicos y accesorios"
+        fecha_creacion:
+          type: string
+          format: date-time
+          description: Fecha de creación de la categoría
+          example: "2024-01-01T00:00:00Z"
+        fecha_actualizacion:
+          type: string
+          format: date-time
+          description: Fecha de última actualización
+          example: "2024-01-10T12:00:00Z"
+
+    ImagenV2:
+      type: object
+      properties:
+        id_imagen:
+          type: integer
+          description: ID único de la imagen
+          example: 1
+        nombre_archivo:
+          type: string
+          description: Nombre del archivo de imagen
+          example: "producto_123.jpg"
+        url_imagen:
+          type: string
+          description: URL completa de la imagen
+          example: "https://storage.example.com/images/producto_123.jpg"
+        tipo_mime:
+          type: string
+          description: Tipo MIME del archivo
+          example: "image/jpeg"
+        tamaño_archivo:
+          type: integer
+          description: Tamaño del archivo en bytes
+          example: 1024000
+        fecha_subida:
+          type: string
+          format: date-time
+          description: Fecha de subida de la imagen
+          readOnly: true
+
+    StockV2:
+      type: object
+      properties:
+        id_registro:
+          type: integer
+          description: ID único del registro de stock
+          example: 1
+          readOnly: true
+        id_producto:
+          type: integer
+          description: ID del producto
+          example: 1
+        cantidad:
+          type: integer
+          description: Cantidad de stock (positivo para entrada, negativo para salida)
+          example: 10
+        tipo_movimiento:
+          type: string
+          description: Tipo de movimiento (ENTRADA/SALIDA/AJUSTE)
+          example: "ENTRADA"
+          enum: ["ENTRADA", "SALIDA", "AJUSTE"]
+        motivo:
+          type: string
+          description: Motivo del movimiento de stock
+          example: "Compra de proveedor"
+          maxLength: 255
+        fecha_movimiento:
+          type: string
+          format: date-time
+          description: Fecha del movimiento
+          readOnly: true
+        id_usuario:
+          type: integer
+          description: ID del usuario que realizó el movimiento
+          example: 1
+
+    RespuestaExitosa:
+      type: object
+      properties:
+        exito:
+          type: boolean
+          description: Estado de la operación
+          example: true
+        mensaje:
+          type: string
+          description: Mensaje de éxito
+          example: "Operación realizada con éxito"
+        datos:
+          type: object
+          description: Datos de la respuesta
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp de la respuesta
+          example: "2024-01-20T15:45:00Z"
+
+    RespuestaErrorV2:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Tipo de error
+          example: "ValidationError"
+        mensaje:
+          type: string
+          description: Mensaje de error detallado
+          example: "Datos de entrada inválidos"
+        estado:
+          type: integer
+          description: Código de estado HTTP
+          example: 400
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp del error
+          readOnly: true
+
+    InformacionPaginacion:
+      type: object
+      properties:
+        pagina:
+          type: integer
+          description: Número de página actual
+          example: 1
+          minimum: 1
+        limite:
+          type: integer
+          description: Elementos por página
+          example: 10
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          description: Total de elementos
+          example: 150
+          minimum: 0
+        totalPaginas:
+          type: integer
+          description: Total de páginas
+          example: 15
+          minimum: 1
+        hasNext:
+          type: boolean
+          description: Indica si hay página siguiente
+          example: true
+        hasPrev:
+          type: boolean
+          description: Indica si hay página anterior
+          example: false
+
+    RespuestaPaginada:
+      type: object
+      properties:
+        exito:
+          type: boolean
+          example: true
+        datos:
+          type: array
+          items:
+            type: object
+        paginacion:
+          $ref: '#/components/schemas/InformacionPaginacion'
+        timestamp:
+          type: string
+          format: date-time
+
 paths:
-  /register-product:
+  # Endpoints API v2
+  /products:
     post:
       security:
         - bearerAuth: []
       tags:
-        - Productos
-      summary: Registrar un nuevo producto
+        - Productos v2
+      summary: Crear nuevo producto
       description: Crea un nuevo producto en el sistema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombre_producto
+                - precio
+                - id_categoria
+              properties:
+                nombre_producto:
+                  type: string
+                  minLength: 2
+                  maxLength: 120
+                  description: Nombre del producto
+                  example: "Laptop Gaming"
+                precio:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: Precio del producto
+                  example: 1499.99
+                descripcion:
+                  type: string
+                  maxLength: 255
+                  description: Descripción del producto
+                  example: "Laptop de alto rendimiento para gaming"
+                cantidad_ingreso:
+                  type: integer
+                  minimum: 0
+                  description: Cantidad inicial de stock
+                  example: 50
+                id_categoria:
+                  type: integer
+                  minimum: 1
+                  description: Identificador de categoría
+                  example: 1
+      responses:
+        '201':
+          description: Producto creado exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaExitosa'
+                  - type: object
+                    properties:
+                      datos:
+                        $ref: '#/components/schemas/ProductoV2'
+        '400':
+          description: Solicitud incorrecta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '422':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+    
+    get:
+      tags:
+        - Productos v2
+      summary: Obtener todos los productos
+      description: Recupera una lista paginada de todos los productos
+      parameters:
+        - name: page
+          in: query
+          description: Número de página
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Elementos por página
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: category
+          in: query
+          description: Filtrar por ID de categoría
+          schema:
+            type: integer
+            minimum: 1
+        - name: min_price
+          in: query
+          description: Filtro de precio mínimo
+          schema:
+            type: number
+            minimum: 0
+        - name: max_price
+          in: query
+          description: Filtro de precio máximo
+          schema:
+            type: number
+            minimum: 0
+        - name: search
+          in: query
+          description: Término de búsqueda para nombres de productos
+          schema:
+            type: string
+            minLength: 2
+      responses:
+        '200':
+          description: Productos recuperados exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaPaginada'
+                  - type: object
+                    properties:
+                      datos:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ProductoV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+  
+  /products/{id}:
+    get:
+      tags:
+        - Productos v2
+      summary: Obtener producto específico
+      description: Recupera un producto por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del producto
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Producto recuperado exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaExitosa'
+                  - type: object
+                    properties:
+                      datos:
+                        $ref: '#/components/schemas/ProductoV2'
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+    
+    put:
+      security:
+        - bearerAuth: []
+      tags:
+        - Productos v2
+      summary: Actualizar producto
+      description: Actualiza un producto existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del producto
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre_producto:
+                  type: string
+                  minLength: 2
+                  maxLength: 120
+                  description: Nombre del producto
+                  example: "Laptop Gaming Actualizada"
+                precio:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: Precio del producto
+                  example: 1599.99
+                descripcion:
+                  type: string
+                  maxLength: 255
+                  description: Descripción del producto
+                  example: "Laptop de alto rendimiento actualizada"
+                id_categoria:
+                  type: integer
+                  minimum: 1
+                  description: Identificador de categoría
+                  example: 2
+                id_imagen:
+                  type: string
+                  description: Identificador de imagen
+                  example: "imagen-actualizada-456"
+      responses:
+        '200':
+          description: Producto actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaExitosa'
+                  - type: object
+                    properties:
+                      datos:
+                        $ref: '#/components/schemas/ProductoV2'
+        '400':
+          description: Solicitud incorrecta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '422':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Productos v2
+      summary: Eliminar producto
+      description: Elimina un producto por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del producto
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Producto eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaExitosa'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+
+  # Endpoints Categorías v2
+  /categories:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Categorías v2
+      summary: Crear nueva categoría
+      description: Crea una nueva categoría en el sistema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nombre_categoria
+              properties:
+                nombre_categoria:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  description: Nombre de la categoría
+                  example: "Electrónica"
+                descripcion:
+                  type: string
+                  maxLength: 255
+                  description: Descripción de la categoría
+                  example: "Dispositivos electrónicos y accesorios"
+      responses:
+        '201':
+          description: Categoría creada exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaExitosa'
+                  - type: object
+                    properties:
+                      datos:
+                        $ref: '#/components/schemas/CategoriaV2'
+        '400':
+          description: Solicitud incorrecta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '422':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+
+    get:
+      tags:
+        - Categorías v2
+      summary: Obtener todas las categorías
+      description: Recupera una lista de todas las categorías
+      parameters:
+        - name: page
+          in: query
+          description: Número de página
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Elementos por página
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Categorías recuperadas exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaPaginada'
+                  - type: object
+                    properties:
+                      datos:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CategoriaV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+  
+  /categories/{id}:
+    get:
+      tags:
+        - Categorías v2
+      summary: Obtener categoría específica
+      description: Recupera una categoría por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la categoría
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Categoría recuperada exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaExitosa'
+                  - type: object
+                    properties:
+                      datos:
+                        $ref: '#/components/schemas/CategoriaV2'
+        '404':
+          description: Categoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+    
+    put:
+      security:
+        - bearerAuth: []
+      tags:
+        - Categorías v2
+      summary: Actualizar categoría
+      description: Actualiza una categoría existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la categoría
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre_categoria:
+                  type: string
+                  minLength: 2
+                  maxLength: 100
+                  description: Nombre de la categoría
+                  example: "Electrónica Actualizada"
+                descripcion:
+                  type: string
+                  maxLength: 255
+                  description: Descripción de la categoría
+                  example: "Dispositivos electrónicos actualizados"
+      responses:
+        '200':
+          description: Categoría actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaExitosa'
+                  - type: object
+                    properties:
+                      datos:
+                        $ref: '#/components/schemas/CategoriaV2'
+        '400':
+          description: Solicitud incorrecta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '404':
+          description: Categoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '422':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+    
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Categorías v2
+      summary: Eliminar categoría
+      description: Elimina una categoría por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la categoría
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Categoría eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaExitosa'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '404':
+          description: Categoría no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+  
+  # Endpoints Imágenes v2
+  /images/upload:
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Imágenes v2
+      summary: Subir imagen
+      description: Sube una nueva imagen al sistema
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Archivo de imagen (máx 6MB, formatos soportados: jpg, png, gif)
+      responses:
+        '201':
+          description: Imagen subida exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaExitosa'
+                  - type: object
+                    properties:
+                      datos:
+                        $ref: '#/components/schemas/ImageV2'
+        '400':
+          description: Solicitud incorrecta (formato o tamaño de archivo inválido)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+  
+  /images/{id}:
+    get:
+      tags:
+        - Imágenes v2
+      summary: Obtener imagen
+      description: Recupera una imagen por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la imagen
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Imagen recuperada exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaExitosa'
+                  - type: object
+                    properties:
+                      datos:
+                        $ref: '#/components/schemas/ImagenV2'
+        '404':
+          description: Imagen no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+    
+    delete:
+      security:
+        - bearerAuth: []
+      tags:
+        - Imágenes v2
+      summary: Eliminar imagen
+      description: Elimina una imagen por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la imagen
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Imagen eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaExitosa'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '404':
+          description: Imagen no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+  
+  # Endpoints Stock v2
+  /stock/{productId}:
+    get:
+      tags:
+        - Stock v2
+      summary: Obtener stock de producto
+      description: Recupera información actual del stock de un producto específico
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: ID del producto
+          schema:
+            type: integer
+            minimum: 1
+      responses:
+        '200':
+          description: Información de stock recuperada exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaExitosa'
+                  - type: object
+                    properties:
+                      datos:
+                        $ref: '#/components/schemas/StockV2'
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+    
+    post:
+      security:
+        - bearerAuth: []
+      tags:
+        - Stock v2
+      summary: Actualizar stock de producto
+      description: Actualiza la cantidad de stock de un producto específico
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: ID del producto
+          schema:
+            type: integer
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cantidad
+              properties:
+                cantidad:
+                  type: integer
+                  description: Cantidad de stock a agregar (positivo) o remover (negativo)
+                  example: 10
+                motivo:
+                  type: string
+                  description: Motivo del ajuste de stock
+                  example: "Nuevo inventario recibido"
+      responses:
+        '200':
+          description: Stock actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaExitosa'
+                  - type: object
+                    properties:
+                      datos:
+                        $ref: '#/components/schemas/StockV2'
+        '400':
+          description: Solicitud incorrecta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+  /stock/history:
+    get:
+      tags:
+        - Stock v2
+      summary: Obtener historial de stock
+      description: Recupera el historial de cambios de stock
+      parameters:
+        - name: page
+          in: query
+          description: Número de página
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Elementos por página
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: product_id
+          in: query
+          description: Filtrar por ID de producto
+          schema:
+            type: integer
+            minimum: 1
+        - name: start_date
+          in: query
+          description: Filtro de fecha inicial (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          description: Filtro de fecha final (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Historial de stock recuperado exitosamente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaPaginada'
+                  - type: object
+                    properties:
+                      datos:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/StockV2'
+        '500':
+      security:
+        - bearerAuth: []
+      tags:
+        - Legacy v1 (Deprecated)
+      summary: Registrar un nuevo producto
+      description: "**DEPRECIADO** - Crea un nuevo producto en el sistema. Use `POST /api/v2/products` en su lugar."
       requestBody:
         required: true
         content:
@@ -114,12 +1233,13 @@ paths:
 
   /get-products:
     get:
+      deprecated: true
       security:
         - bearerAuth: []
       tags:
-        - Productos
+        - Legacy v1 (Deprecated)
       summary: Obtener todos los productos
-      description: Retorna la lista de todos los productos
+      description: "**DEPRECIADO** - Retorna una lista de todos los productos. Use `GET /api/v2/products` en su lugar."
       responses:
         '200':
           description: Lista de productos obtenida exitosamente
@@ -138,12 +1258,13 @@ paths:
 
   /get-product/{id_producto}:
     get:
+      deprecated: true
       security:
         - bearerAuth: []
       tags:
-        - Productos
+        - Legacy v1 (Deprecated)
       summary: Obtener un producto específico
-      description: Retorna un producto por su ID
+      description: '"**DEPRECIADO** - Retorna un producto por su ID. Use `GET /api/v2/products/{id}` en su lugar."'
       parameters:
         - name: id_producto
           in: path
@@ -170,12 +1291,13 @@ paths:
 
   /delete-product/{id_producto}:
     delete:
+      deprecated: true
       security:
         - bearerAuth: []
       tags:
-        - Productos
+        - Legacy v1 (Deprecated)
       summary: Eliminar un producto
-      description: Elimina un producto por su ID
+      description: "**DEPRECATED** - Deletes a product by its ID. Use `DELETE /api/v2/products/{id}` instead."
       parameters:
         - name: id_producto
           in: path
@@ -202,12 +1324,13 @@ paths:
 
   /update-product/{id_producto}:
     put:
+      deprecated: true
       security:
         - bearerAuth: []
       tags:
-        - Productos
+        - Legacy v1 (Deprecated)
       summary: Actualizar un producto
-      description: Actualiza la información de un producto existente
+      description: "**DEPRECATED** - Updates an existing product. Use `PUT /api/v2/products/{id}` instead."
       parameters:
         - name: id_producto
           in: path
@@ -262,10 +1385,11 @@ paths:
 
   /upload-image:
     post:
+      deprecated: true
       tags:
-        - Imágenes
+        - Legacy v1 (Deprecated)
       summary: Subir imagen de producto
-      description: Sube una nueva imagen para un producto
+      description: "**DEPRECATED** - Uploads a new image for a product. Use `POST /api/v2/images/upload` instead."
       requestBody:
         required: true
         content:
@@ -296,10 +1420,11 @@ paths:
 
   /get-image/{fileName}:
     get:
+      deprecated: true
       tags:
-        - Imágenes
+        - Legacy v1 (Deprecated)
       summary: Obtener imagen
-      description: Obtiene una imagen por su nombre de archivo
+      description: "**DEPRECATED** - Gets an image by its filename. Use `GET /api/v2/images/{id}` instead."
       parameters:
         - name: fileName
           in: path
@@ -326,10 +1451,11 @@ paths:
 
   /delete-image:
     delete:
+      deprecated: true
       tags:
-        - Imágenes
+        - Legacy v1 (Deprecated)
       summary: Eliminar imagen
-      description: Elimina una imagen por su nombre de archivo
+      description: "**DEPRECATED** - Deletes an image by its filename. Use `DELETE /api/v2/images/{id}` instead."
       requestBody:
         required: true
         content:
@@ -1006,3 +2132,110 @@ paths:
                   details:
                     type: string
                     example: "Error al consultar la base de datos"
+
+# Enhanced Documentation - Migration Guide
+# Migration Guide from v1 to v2
+
+# Overview
+# This document provides guidance for migrating from v1 to v2 API endpoints.
+
+# Key Changes
+# 1. **Base URL**: Changed from `/endpoint` to `/api/v2/endpoint`
+# 2. **RESTful Design**: Proper HTTP methods and resource-based naming
+# 3. **Standardized Responses**: Consistent response format across all endpoints
+# 4. **English Documentation**: All v2 endpoints documented in English
+# 5. **Enhanced Features**: Pagination, filtering, and better error handling
+
+# Endpoint Mapping
+# | v1 Endpoint | v2 Endpoint | Method | Notes |
+# |--------------|--------------|---------|---------|
+# | `/register-product` | `/api/v2/products` | POST | Same functionality, improved validation |
+# | `/get-products` | `/api/v2/products` | GET | Added pagination and filtering |
+# | `/get-product/{id}` | `/api/v2/products/{id}` | GET | Standardized parameter name |
+# | `/update-product/{id}` | `/api/v2/products/{id}` | PUT | Same functionality |
+# | `/delete-product/{id}` | `/api/v2/products/{id}` | DELETE | Same functionality |
+# | `/register-category` | `/api/v2/categories` | POST | Same functionality |
+# | `/getAll-category` | `/api/v2/categories` | GET | Added pagination |
+# | `/getById-category/{id}` | `/api/v2/categories/{id}` | GET | Standardized parameter name |
+# | `/update-category/{id}` | `/api/v2/categories/{id}` | PUT | Same functionality |
+# | `/delete_category/{id}` | `/api/v2/categories/{id}` | DELETE | Same functionality |
+# | `/upload-image` | `/api/v2/images/upload` | POST | Same functionality |
+# | `/get-image/{fileName}` | `/api/v2/images/{id}` | GET | Changed parameter to ID |
+# | `/delete-image` | `/api/v2/images/{id}` | DELETE | Changed parameter to ID |
+# | `/estadisticasStockBajo` | `/api/v2/reports/low-stock` | GET | Added pagination and threshold |
+
+# Response Format Changes
+# ### v1 Response Format
+# ```json
+# {
+#   "status": "Producto registrado con éxito",
+#   // or specific data structure
+# }
+# ```
+# 
+# ### v2 Response Format
+# ```json
+# {
+#   "success": true,
+#   "message": "Operation completed successfully",
+#   "data": {
+#     // actual response data
+#   },
+#   "timestamp": "2024-01-20T15:45:00Z"
+# }
+# ```
+
+# Authentication
+# All v2 endpoints that require authentication use the same JWT bearer token system:
+# ```http
+# Authorization: Bearer <your-jwt-token>
+# ```
+# 
+# ### Required Roles
+# - **Admin Operations**: POST, PUT, DELETE operations require `ADMINISTRADOR` role
+# - **Read Operations**: GET operations are generally public (except reports)
+
+# New Features in v2
+# 
+# ### Pagination
+# List endpoints support pagination:
+# ```http
+# GET /api/v2/products?page=1&limit=10
+# ```
+# 
+# ### Filtering
+# Products endpoint supports filtering:
+# ```http
+# GET /api/v2/products?category=1&min_price=100&max_price=1000&search=laptop
+# ```
+# 
+# ### Enhanced Error Handling
+# Consistent error response format:
+# ```json
+# {
+#   "error": "ValidationError",
+#   "message": "Invalid input data",
+#   "status": 400,
+#   "timestamp": "2024-01-20T15:45:00Z"
+# }
+# ```
+
+# Migration Steps
+# 1. **Update Base URLs**: Change all endpoint calls to use `/api/v2/` prefix
+# 2. **Update HTTP Methods**: Ensure proper RESTful method usage
+# 3. **Handle New Response Format**: Update client code to handle standardized responses
+# 4. **Implement Pagination**: Add pagination support for list endpoints
+# 5. **Update Error Handling**: Implement consistent error handling
+# 6. **Test Thoroughly**: Test all functionality with v2 endpoints
+
+# Timeline
+# - **v1 Endpoints**: Available until December 31, 2024
+# - **Deprecation Warnings**: All v1 endpoints return deprecation headers
+# - **v2 Endpoints**: Immediately available for production use
+# - **Support**: Full support provided during migration period
+
+# Support
+# For migration assistance, contact:
+# - Email: support@tatsoft.com
+# - Documentation: https://docs.tatsoft.com/api/v2
+# - Examples: Check the API_V2_DOCUMENTATION.md file in repository
