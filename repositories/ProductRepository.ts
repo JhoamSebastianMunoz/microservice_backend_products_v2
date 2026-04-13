@@ -15,7 +15,6 @@ class ProductRepository {
                     precio: product.precio,
                     descripcion: product.descripcion,
                     cantidad_ingreso: product.cantidad_ingreso,
-                    id_imagen: product.id_imagen,
                     id_categoria: product.id_categoria
                 }
             ])
@@ -81,8 +80,7 @@ class ProductRepository {
                 nombre_producto: updateProduct.nombre_producto,
                 precio: updateProduct.precio,
                 descripcion: updateProduct.descripcion,
-                id_categoria: updateProduct.id_categoria,
-                id_imagen: updateProduct.id_imagen
+                id_categoria: updateProduct.id_categoria
             })
             .eq('id_producto', updateProduct.id_producto)
             .select('*');

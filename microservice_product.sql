@@ -3,6 +3,7 @@
 DROP TABLE IF EXISTS productos CASCADE;
 DROP TABLE IF EXISTS registro_stock CASCADE;
 DROP TABLE IF EXISTS categorias CASCADE;
+DROP TABLE IF EXISTS product_images CASCADE;
  
 -- Crear tipo ENUM para el estado de clientes
 CREATE TYPE estado_cliente AS ENUM ('Activo', 'Inactivo');
@@ -13,7 +14,7 @@ CREATE TABLE categorias (
     nombre_categoria VARCHAR(100) NOT NULL,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
- 
+
 -- Tabla productos
 CREATE TABLE productos (
     id_producto SERIAL PRIMARY KEY,
@@ -22,12 +23,29 @@ CREATE TABLE productos (
     descripcion VARCHAR(255),
     cantidad_ingreso INTEGER,
     id_categoria INTEGER,
-    id_imagen VARCHAR(120) NOT NULL,
     FOREIGN KEY (id_categoria) REFERENCES categorias(id_categoria)
     ON DELETE SET NULL
     ON UPDATE CASCADE
 );
  
+-- Tabla imágenes
+CREATE TABLE product_images (
+    id SERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
+    storage_path VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_primary BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (product_id) REFERENCES productos(id_producto)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+-- Índices para mejor rendimiento
+CREATE INDEX idx_product_images_product_id ON product_images(product_id);
+CREATE INDEX idx_product_images_primary ON product_images(product_id, is_primary) WHERE is_primary = TRUE;
+CREATE INDEX idx_product_images_created_at ON product_images(created_at);
+
 -- Tabla registro_stock
 CREATE TABLE registro_stock (
     id_registro SERIAL PRIMARY KEY,

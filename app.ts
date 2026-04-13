@@ -9,6 +9,7 @@ import get_products from './routes/productRoutes/get_products';
 import get_product from './routes/productRoutes/get_product';
 import delete_product from './routes/productRoutes/delete_product';
 import update_product from './routes/productRoutes/update_product';
+import product_images from './routes/productRoutes/product_images';
 import register_stock from './routes/productRoutes/registre_stock';
 import get_historicalStock from './routes/productRoutes/get__historicalStock';
 import get_detailsStock from './routes/productRoutes/get_detailsStock';
@@ -66,6 +67,7 @@ app.use('/get-products', get_products);
 app.use('/get-product', get_product);
 app.use('/delete-product', delete_product);
 app.use('/update-product', update_product);
+app.use('/products', product_images);
 app.use('/register-stock', register_stock);
 // Sentencia CRUD para stock
 app.use('/get-hitoricalStock', get_historicalStock);
