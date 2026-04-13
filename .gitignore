@@ -3,3 +3,5 @@ node_modules
 dist
 generate_key
 swagger2.yaml
+REFACTOR_DOCUMENTATION.md
+API_V2_DOCUMENTATION.md

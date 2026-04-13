@@ -28,6 +28,13 @@ import update_quantity from './routes/microservicePresaleRoutes/update_Quantity'
 
 import get_productsLowStock from './routes/reportsRouter/getProductsLowStock';
 
+// V2 API Routes
+import productsV2 from './routes/v2/products';
+import categoriesV2 from './routes/v2/categories';
+import imagesV2 from './routes/v2/images';
+import stockV2 from './routes/v2/stock';
+import reportsV2 from './routes/v2/reports';
+
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -61,7 +68,14 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Sentencia CRUD para productos
+// API v2 Routes - RESTful naming conventions
+app.use('/api/v2/products', productsV2);
+app.use('/api/v2/categories', categoriesV2);
+app.use('/api/v2/images', imagesV2);
+app.use('/api/v2/stock', stockV2);
+app.use('/api/v2/reports', reportsV2);
+
+// Legacy Routes - Keep for backward compatibility
 app.use('/register-product', register_product);
 app.use('/get-products', get_products);
 app.use('/get-product', get_product);
@@ -69,26 +83,18 @@ app.use('/delete-product', delete_product);
 app.use('/update-product', update_product);
 app.use('/products', product_images);
 app.use('/register-stock', register_stock);
-// Sentencia CRUD para stock
 app.use('/get-hitoricalStock', get_historicalStock);
 app.use('/get-detailsStock', get_detailsStock);
-// Sentencia CRUD para categorias
 app.use('/register-category', register_category);
 app.use('/getAll-category', getAll_category);
 app.use('/getById-category', getById_category);
 app.use('/update-category', update_category);
 app.use('/delete_category', delete_category);
-
-// rutas para las imagenes usando el servicio de Azure
 app.use('/upload-image', uploadImage);
 app.use('/get-image', getImage);
 app.use('/delete-image', deleteImage);
-
-// rutas para peticiones del microservicio preventa
 app.use('/api', get_dataProduct);
-// Para actualizar la cantidad de productos
 app.use('/api', update_quantity);
-
 app.use('/estadisticasStockBajo', get_productsLowStock);
 
 
