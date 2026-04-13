@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
-import DeleteProduct from "../../Dto/productDto/DeleteProductDto";
+import DeleteProductRequest from "../../Dto/productDto/DeleteProductDto";
 import ProductService from '../../services/ProductService';
-
 
 
 
 let delete_product = async (req: Request, res: Response) => {  
     try {
-        const { id_producto } = req.params;
-        const result = await ProductService.deleteProduct(new DeleteProduct(id_producto));
+        const { id } = req.params;
+        const deleteProductRequest: DeleteProductRequest = { id: parseInt(id) };
+        const result = await ProductService.deleteProduct(deleteProductRequest);
         if (!result) {
             return res.status(404).json({ error: "Producto no encontrado." });
         }

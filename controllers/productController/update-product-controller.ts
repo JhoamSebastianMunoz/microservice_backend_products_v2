@@ -1,11 +1,11 @@
 import {Request, Response} from 'express';
-import UpdateProduct from '../../Dto/productDto/UpdateProductDto';
+import UpdateProductRequest from '../../Dto/productDto/UpdateProductDto';
 import ProductService from '../../services/ProductService';
 import ProductImageService from '../../services/ProductImageService';
 
 let update_product = async(req:Request, res:Response)=>{
     try {
-        const{ id_producto } =req.params;
+        const{ id } =req.params;
         const {
             nombre_producto,
             precio,
@@ -19,7 +19,14 @@ let update_product = async(req:Request, res:Response)=>{
         const images = req.files as Express.Multer.File[] || [];
 
         // Actualizar datos del producto
-        const result = await ProductService.updateProduct(new UpdateProduct(nombre_producto, precio, descripcion, id_categoria, id_producto));
+        const updateProductRequest: UpdateProductRequest = {
+            id: parseInt(id),
+            nombre_producto,
+            precio,
+            descripcion,
+            id_categoria
+        };
+        const result = await ProductService.updateProduct(updateProductRequest);
         
         if (!result || result.affectedRows === 0) {
             return res.status(404).json({ error: "Producto no encontrado." });
@@ -53,7 +60,7 @@ let update_product = async(req:Request, res:Response)=>{
             if (images.length > 0) {
                 try {
                     const uploadedImages = await ProductImageService.uploadMultipleImages(
-                        parseInt(id_producto), 
+                        parseInt(id), 
                         images, 
                         primary_image_index ? parseInt(primary_image_index) : undefined
                     );
@@ -68,7 +75,7 @@ let update_product = async(req:Request, res:Response)=>{
                 const primaryImageId = imageResults.uploaded[parseInt(primary_image_index)]?.id;
                 if (primaryImageId) {
                     try {
-                        await ProductImageService.setPrimaryImage(primaryImageId, parseInt(id_producto));
+                        await ProductImageService.setPrimaryImage(primaryImageId, parseInt(id));
                     } catch (error) {
                         imageResults.errors.push(`Error estableciendo imagen principal: ${error instanceof Error ? error.message : 'Error desconocido'}`);
                     }
@@ -82,7 +89,7 @@ let update_product = async(req:Request, res:Response)=>{
 
         return res.status(200).json({
             status: 'Producto actualizado con éxito',
-            product_id: id_producto,
+            product_id: id,
             images: imageResults
         });
             

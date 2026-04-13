@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import Product from '../../Dto/productDto/ProductDto';
+import { CreateProductRequest } from '../../Dto/productDto/ProductDto';
 import ProductService from '../../services/ProductService';
 import ProductImageService from '../../services/ProductImageService';
 
@@ -17,8 +17,15 @@ let register_product = async (req: Request, res: Response) => {
     // Extraer archivos de imágenes del request
     const images = req.files as Express.Multer.File[] || [];
 
-    // Crear producto sin imagen (las imágenes se manejan por separado)
-    const product = new Product(nombre_producto, precio, descripcion, cantidad_ingreso, id_categoria);
+    // Crear objeto de producto con la nueva interface
+    const product: CreateProductRequest = {
+      nombre_producto,
+      precio,
+      descripcion,
+      cantidad_ingreso,
+      id_categoria
+    };
+    
     const result = await ProductService.register_product(product);
     
     // Si el producto se creó exitosamente y hay imágenes, subirlas

@@ -1,11 +1,12 @@
 import { Request, Response } from "express";
-import GetProduct from "../../Dto/productDto/GetProductDto";
+import GetProductRequest from "../../Dto/productDto/GetProductDto";
 import ProductService from '../../services/ProductService';
 
 let get_product = async (req: Request, res: Response) => {  
     try {
-        const { id_producto } = req.params;
-        const result = await ProductService.getProduct(new GetProduct (id_producto));
+        const { id } = req.params;
+        const getProductRequest: GetProductRequest = { id: parseInt(id) };
+        const result = await ProductService.getProduct(getProductRequest);
         if(result.length === 0) {
             return res.status(404).json({message: 'Producto no encontrado'})
         }else{
