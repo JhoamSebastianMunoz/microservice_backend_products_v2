@@ -3,13 +3,6 @@ info:
   title: API de Productos TATSoft v2
   description: API RESTful para gestión de productos con endpoints v2 mejorados y compatibilidad con v1
   version: 2.0.0
-  contact:
-    name: Soporte TATSoft
-    email: support@tatsoft.com
-    url: https://tatsoft.com
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
 
 servers:
   - url: http://localhost:10102/api/v2
