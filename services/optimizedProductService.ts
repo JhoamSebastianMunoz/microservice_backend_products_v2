@@ -1,4 +1,4 @@
-import { CreateProductRequest, ProductResponse } from '../Dto/productDto/ProductDto';
+import { CreateProductRequest, ProductResponse, Product } from '../Dto/productDto/ProductDto';
 import UpdateProductRequest from '../Dto/productDto/UpdateProductDto';
 import GetProductRequest from '../Dto/productDto/GetProductDto';
 import DeleteProductRequest from '../Dto/productDto/DeleteProductDto';
@@ -150,7 +150,7 @@ class OptimizedProductService {
             await this.validateBusinessRules(product);
 
             // Inserción con retorno de ID
-            const result = await ProductRepository.add(product);
+            const result = await ProductRepository.add(product as Product);
 
             // Invalidar caché relacionada
             invalidateCache('/api/v2/products');

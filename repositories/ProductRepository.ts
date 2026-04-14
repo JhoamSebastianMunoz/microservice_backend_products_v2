@@ -1,5 +1,5 @@
 import supabaseClient from '../config/config-supabaseStorage';
-import Product from '../Dto/productDto/ProductDto';
+import { Product } from '../Dto/productDto/ProductDto';
 import GetProduct from '../Dto/productDto/GetProductDto';
 import DeleteProduct from '../Dto/productDto/DeleteProductDto';
 import UpdateProduct from '../Dto/productDto/UpdateProductDto';
@@ -46,7 +46,7 @@ class ProductRepository {
                 *,
                 categorias(nombre_categoria)
             `)
-            .eq('id_producto', getProduct.id_producto)
+            .eq('id_producto', getProduct.id)
             .single();
         
         if (error) {
@@ -67,7 +67,7 @@ class ProductRepository {
         const { data, error } = await supabaseClient
             .from('productos')
             .delete()
-            .eq('id_producto', deleteProduct.id_producto)
+            .eq('id_producto', deleteProduct.id)
             .select('*');
         
         if (error) throw error;
@@ -82,7 +82,7 @@ class ProductRepository {
                 descripcion: updateProduct.descripcion,
                 id_categoria: updateProduct.id_categoria
             })
-            .eq('id_producto', updateProduct.id_producto)
+            .eq('id_producto', updateProduct.id)
             .select('*');
         
         if (error) throw error;

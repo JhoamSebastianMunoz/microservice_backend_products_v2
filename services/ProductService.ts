@@ -7,7 +7,11 @@ import UpdateProductRequest from '../Dto/productDto/UpdateProductDto';
 class ProductService {
     
     static async register_product(product: CreateProductRequest) {
-        return await ProductRepository.add(product);
+        const result = await ProductRepository.add({
+            ...product,
+            cantidad_ingreso: product.cantidad_ingreso || 0
+        });
+        return result;
     }
     static async getProducts(){
         return await ProductRepository.getAll();

@@ -1,7 +1,6 @@
-import { CreateProductRequest, UpdateProductRequest, ProductResponse, ProductImage } from '../Dto/productDto/ProductDto';
+import { CreateProductRequest, UpdateProductRequest, ProductResponse, ProductImage, ProductImageDto } from '../Dto/productDto/ProductDto';
 import ProductService from './ProductService';
 import ProductImageService from './ProductImageService';
-import ProductImageDto from '../Dto/productDto/ProductImageDto';
 
 // Interfaz para las estrategias de producto
 export interface ProductOperationStrategy {
@@ -34,14 +33,17 @@ export class CreateProductWithImagesStrategy implements ProductOperationStrategy
             
             return {
                 id: result.insertId,
-                ...productData,
+                nombre_producto: productData.nombre_producto,
+                precio: productData.precio,
+                descripcion: productData.descripcion,
                 cantidad_ingreso: productData.cantidad_ingreso || 0,
+                id_categoria: productData.id_categoria,
                 imagenes: processedImages.map(img => ({
-                    id: img.id,
-                    url_imagen: img.url_imagen,
-                    es_principal: img.es_principal
+                    id: img.id!,
+                    url_imagen: (img as any).url_imagen || (img as any).image_url!,
+                    es_principal: (img as any).es_principal || (img as any).is_primary!
                 }))
-            };
+            } as ProductResponse;
         } catch (error) {
             throw error;
         }
@@ -59,7 +61,13 @@ export class UpdateProductWithImagesStrategy implements ProductOperationStrategy
             const { images, delete_images, primary_image_index } = request;
             
             // Actualizar datos del producto
-            const result = await ProductService.updateProduct(request);
+            const result = await ProductService.updateProduct({
+                id: (request as any).id,
+                nombre_producto: request.nombre_producto,
+                precio: request.precio,
+                descripcion: request.descripcion,
+                id_categoria: request.id_categoria
+            });
             
             if (!result || result.affectedRows === 0) {
                 throw new Error('Producto no encontrado');
@@ -67,14 +75,14 @@ export class UpdateProductWithImagesStrategy implements ProductOperationStrategy
             
             // Procesar imágenes
             const imageResults = await ProductImageService.processProductImages(
-                request.id,
+                (request as any).id,
                 images || [],
                 delete_images,
                 primary_image_index
             );
             
             // Obtener datos actualizados del producto
-            const getProductRequest = { id: request.id };
+            const getProductRequest = { id: (request as any).id };
             const updatedProduct = await ProductService.getProduct(getProductRequest);
             
             if (!updatedProduct || updatedProduct.length === 0) {
@@ -82,13 +90,18 @@ export class UpdateProductWithImagesStrategy implements ProductOperationStrategy
             }
             
             return {
-                ...updatedProduct[0],
-                imagenes: imageResults.uploaded.map(img => ({
-                    id: img.id,
-                    url_imagen: img.url_imagen,
-                    es_principal: img.es_principal
+                id: (updatedProduct[0] as any).id,
+                nombre_producto: (updatedProduct[0] as any).nombre_producto,
+                precio: (updatedProduct[0] as any).precio,
+                descripcion: (updatedProduct[0] as any).descripcion,
+                cantidad_ingreso: (updatedProduct[0] as any).cantidad_ingreso,
+                id_categoria: (updatedProduct[0] as any).id_categoria,
+                imagenes: imageResults.uploaded.map(img => ({        
+                    id: img.id!,
+                    url_imagen: (img as any).url_imagen || (img as any).image_url!,
+                    es_principal: (img as any).es_principal || (img as any).is_primary!
                 }))
-            };
+            } as ProductResponse;
         } catch (error) {
             throw error;
         }
@@ -112,13 +125,18 @@ export class GetProductWithImagesStrategy implements ProductOperationStrategy {
             const images = await ProductImageService.getProductImages(id);
             
             return {
-                ...productResult[0],
-                imagenes: images.map((img: ProductImageDto) => ({
-                    id: img.id,
-                    url_imagen: img.url_imagen,
-                    es_principal: img.es_principal
+                id: (productResult[0] as any).id,
+                nombre_producto: (productResult[0] as any).nombre_producto,
+                precio: (productResult[0] as any).precio,
+                descripcion: (productResult[0] as any).descripcion,
+                cantidad_ingreso: (productResult[0] as any).cantidad_ingreso,
+                id_categoria: (productResult[0] as any).id_categoria,
+                imagenes: images.map((img: ProductImageDto) => ({   
+                    id: img.id!,
+                    url_imagen: (img as any).url_imagen || (img as any).image_url!,
+                    es_principal: (img as any).es_principal || (img as any).is_primary!
                 }))
-            };
+            } as ProductResponse;
         } catch (error) {
             throw error;
         }

@@ -1,0 +1,553 @@
+openapi: 3.0.0
+info:
+  title: Productos Microservice API v2
+  description: API optimizada para gestión de productos con caché, validaciones robustas y arquitectura SOLID
+  version: 2.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+    url: https://docs.example.com
+  license: MIT
+
+servers:
+  - url: https://api.example.com/api/v2
+    description: Servidor de producción
+
+paths:
+  /products:
+    get:
+      summary: Obtener lista de productos
+      description: Retorna productos paginados con filtros y ordenamiento
+      tags:
+        - Products
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            description: Número de página
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            description: Límite de resultados por página
+        - name: id_categoria
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            description: Filtrar por categoría
+        - name: precio_min
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            description: Precio mínimo
+        - name: precio_max
+          in: query
+          schema:
+            type: number
+            minimum: 0
+            description: Precio máximo
+        - name: nombre
+          in: query
+          schema:
+            type: string
+            description: Filtrar por nombre (búsqueda parcial)
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [nombre_producto, precio, created_at]
+            default: nombre_producto
+            description: Campo de ordenamiento
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [ASC, DESC]
+            default: ASC
+            description: Dirección de ordenamiento
+      responses:
+        '200':
+          description: Lista de productos obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      products:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Product'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+        '422':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerError'
+      headers:
+        X-Cache:
+          description: Indica si la respuesta viene de caché
+          schema:
+            type: string
+            enum: [HIT, MISS]
+
+    post:
+      summary: Crear nuevo producto
+      description: Crea un nuevo producto con imágenes opcionales
+      tags:
+        - Products
+      security:
+        - BearerAuth
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                nombre_producto:
+                  type: string
+                  minLength: 2
+                  maxLength: 120
+                  description: Nombre del producto
+                precio:
+                  type: number
+                  minimum: 0
+                  description: Precio del producto
+                descripcion:
+                  type: string
+                  maxLength: 255
+                  description: Descripción del producto
+                cantidad_ingreso:
+                  type: integer
+                  minimum: 0
+                  description: Cantidad inicial
+                id_categoria:
+                  type: integer
+                  minimum: 1
+                  description: ID de categoría
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Archivos de imágenes
+                primary_image_index:
+                  type: integer
+                  minimum: 0
+                  description: Índice de imagen principal
+              required:
+                - nombre_producto
+                - precio
+      responses:
+        '201':
+          description: Producto creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Producto registrado con éxito"
+                  data:
+                    type: object
+                    properties:
+                      product_id:
+                        type: integer
+                        example: 123
+                      images:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ProductImage'
+        '400':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+        '409':
+          description: Conflicto de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+
+  /products/{id}:
+    get:
+      summary: Obtener producto específico
+      description: Retorna un producto con sus imágenes
+      tags:
+        - Products
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            description: ID del producto
+      responses:
+        '200':
+          description: Producto obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ProductDetail'
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+    put:
+      summary: Actualizar producto
+      description: Actualiza un producto existente
+      tags:
+        - Products
+      security:
+        - BearerAuth
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            description: ID del producto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                nombre_producto:
+                  type: string
+                  minLength: 2
+                  maxLength: 120
+                  description: Nombre del producto
+                precio:
+                  type: number
+                  minimum: 0
+                  description: Precio del producto
+                descripcion:
+                  type: string
+                  maxLength: 255
+                  description: Descripción del producto
+                id_categoria:
+                  type: integer
+                  minimum: 1
+                  description: ID de categoría
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Nuevas imágenes
+                delete_images:
+                  type: array
+                  items:
+                    type: string
+                  description: IDs de imágenes a eliminar
+                primary_image_index:
+                  type: integer
+                  minimum: 0
+                  description: Índice de imagen principal
+      responses:
+        '200':
+          description: Producto actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Producto actualizado con éxito"
+                  data:
+                    type: object
+                    properties:
+                      product_id:
+                        type: integer
+                        example: 123
+                      images:
+                        type: object
+                        properties:
+                          uploaded:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/ProductImage'
+                          deleted:
+                            type: array
+                            items:
+                              type: string
+                          errors:
+                            type: array
+                            items:
+                              type: string
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '422':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+    delete:
+      summary: Eliminar producto
+      description: Elimina un producto existente
+      tags:
+        - Products
+      security:
+        - BearerAuth
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            description: ID del producto
+      responses:
+        '200':
+          description: Producto eliminado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Producto eliminado con éxito"
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+        '409':
+          description: Producto con dependencias
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConflictError'
+
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nombre_producto:
+          type: string
+          example: "Producto Ejemplo"
+        precio:
+          type: number
+          example: 99.99
+        descripcion:
+          type: string
+          example: "Descripción del producto"
+        cantidad_ingreso:
+          type: integer
+          example: 100
+        id_categoria:
+          type: integer
+          example: 1
+        activo:
+          type: boolean
+          example: true
+        imagenes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImage'
+
+    ProductDetail:
+      allOf:
+        - $ref: '#/components/schemas/Product'
+      type: object
+      example:
+        id: 1
+        nombre_producto: "Producto Completo"
+        precio: 99.99
+        descripcion: "Descripción completa"
+        cantidad_ingreso: 100
+        id_categoria: 1
+        activo: true
+        imagenes:
+          - id: 1
+            url_imagen: "https://example.com/image1.jpg"
+            es_principal: true
+          - id: 2
+            url_imagen: "https://example.com/image2.jpg"
+            es_principal: false
+
+    ProductImage:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        url_imagen:
+          type: string
+          format: uri
+          example: "https://example.com/image.jpg"
+        es_principal:
+          type: boolean
+          example: true
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 150
+        totalPages:
+          type: integer
+          example: 8
+        hasNext:
+          type: boolean
+          example: true
+        hasPrev:
+          type: boolean
+          example: false
+
+    ValidationError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error de validación"
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "nombre_producto"
+              message:
+                type: string
+                example: "El nombre del producto debe tener entre 2 y 120 caracteres"
+              value:
+                type: string
+                example: "A"
+
+    NotFoundError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Producto no encontrado"
+
+    ConflictError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Conflicto de datos"
+
+    AuthError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "No autorizado"
+
+    ServerError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error interno del servidor"
+        error:
+          type: string
+          example: "INTERNAL_ERROR"
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Autenticación mediante token JWT
+
+tags:
+  - name: Products
+    description: Operaciones de productos
