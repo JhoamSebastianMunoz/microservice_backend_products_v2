@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { CreateProductRequest } from '../../Dto/productDto/ProductDto';
 import ProductService from '../../services/ProductService';
 import ProductImageService from '../../services/ProductImageService';
+import { successResponse, createApiError } from '../../middleware/errorHandler';
 
 let register_product = async (req: Request, res: Response) => {  
   try {
@@ -37,33 +38,30 @@ let register_product = async (req: Request, res: Response) => {
           primary_image_index ? parseInt(primary_image_index) : undefined
         );
         
-        return res.status(201).json({
-          status: 'Producto registrado con éxito',
+        return res.status(201).json(successResponse({
           product_id: result.insertId,
           images: uploadedImages
-        });
+        }, 'Producto registrado con éxito', 201));
       } catch (imageError) {
         console.error('Error subiendo imágenes:', imageError);
         // El producto se creó pero las imágenes fallaron, retornar advertencia
-        return res.status(201).json({
-          status: 'Producto registrado con éxito, pero hubo errores al subir las imágenes',
+        return res.status(201).json(successResponse({
           product_id: result.insertId,
           image_error: imageError instanceof Error ? imageError.message : 'Error desconocido'
-        });
+        }, 'Producto registrado con éxito, pero hubo errores al subir las imágenes', 201));
       }
     }
     
-    return res.status(201).json({
-      status: 'Producto registrado con éxito',
+    return res.status(201).json(successResponse({
       product_id: result?.insertId
-    });
+    }, 'Producto registrado con éxito', 201));
     
   } catch (error: any) {    
-    if (error && error.code == "ER_DUP_ENTRY") {
-        return res.status(500).json({ errorInfo: error.sqlMessage });
-    } else {
-        return res.status(500).json({ error: "Internal Server Error", details: error.message });
-    }
+    throw createApiError(
+      error.code === "ER_DUP_ENTRY" ? error.sqlMessage : "Error al registrar producto",
+      error.code === "ER_DUP_ENTRY" ? 409 : 500,
+      error.message
+    );
   }
 };
 

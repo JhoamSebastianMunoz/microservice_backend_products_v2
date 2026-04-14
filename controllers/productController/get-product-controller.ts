@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import GetProductRequest from "../../Dto/productDto/GetProductDto";
 import ProductService from '../../services/ProductService';
+import { successResponse, notFoundResponse, createApiError } from '../../middleware/errorHandler';
 
 let get_product = async (req: Request, res: Response) => {  
     try {
@@ -8,17 +9,17 @@ let get_product = async (req: Request, res: Response) => {
         const getProductRequest: GetProductRequest = { id: parseInt(id) };
         const result = await ProductService.getProduct(getProductRequest);
         if(result.length === 0) {
-            return res.status(404).json({message: 'Producto no encontrado'})
+            return res.status(404).json(notFoundResponse('Producto'));
         }else{
-            return res.status(200).json(result);
+            return res.status(200).json(successResponse(result));
         }
         
         } catch (error: any) {    
-        if (error && error.code == "ER_DUP_ENTRY") {
-            return res.status(500).json({ errorInfo: error.sqlMessage });
-        } else {
-            return res.status(500).json({ error: "Internal Server Error", details: error.message });
-        }
+            throw createApiError(
+                "Error al obtener producto",
+                500,
+                error.message
+            );
         }
     };
 

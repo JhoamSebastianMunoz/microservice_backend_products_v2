@@ -1,16 +1,17 @@
 import { Request, Response } from "express";
 import ProductService from '../../services/ProductService';
+import { successResponse, createApiError } from '../../middleware/errorHandler';
 
 let get_products = async (req: Request, res: Response) => {  
     try {
         const result = await ProductService.getProducts()
-        return res.status(200).json(result);
+        return res.status(200).json(successResponse(result));
         } catch (error: any) {    
-            if (error && error.code == "ER_DUP_ENTRY") {
-                return res.status(500).json({ errorInfo: error.sqlMessage });
-            } else {
-                return res.status(500).json({ error: "Internal Server Error", details: error.message });
-            }
+            throw createApiError(
+                "Error al obtener productos",
+                500,
+                error.message
+            );
         }
     };
 

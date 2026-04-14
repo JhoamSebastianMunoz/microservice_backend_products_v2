@@ -162,6 +162,78 @@ class ProductImageService {
         }
     }
 
+    // Procesar imágenes de producto (eliminar, subir nuevas, establecer principal)
+    static async processProductImages(
+        productId: number,
+        newImages: Express.Multer.File[],
+        deleteImages?: string[],
+        primaryImageIndex?: number
+    ): Promise<{
+        uploaded: ProductImage[];
+        deleted: string[];
+        errors: string[];
+    }> {
+        const imageResults: {
+            uploaded: ProductImage[];
+            deleted: string[];
+            errors: string[];
+        } = {
+            uploaded: [],
+            deleted: [],
+            errors: []
+        };
+
+        try {
+            // Eliminar imágenes solicitadas
+            if (deleteImages && Array.isArray(deleteImages)) {
+                for (const imageId of deleteImages) {
+                    try {
+                        await this.deleteProductImage(parseInt(imageId));
+                        imageResults.deleted.push(imageId);
+                    } catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+                        imageResults.errors.push(`Error eliminando imagen ${imageId}: ${errorMessage}`);
+                    }
+                }
+            }
+
+            // Subir nuevas imágenes
+            if (newImages.length > 0) {
+                try {
+                    const uploadedImages = await this.uploadMultipleImages(
+                        productId,
+                        newImages,
+                        primaryImageIndex
+                    );
+                    imageResults.uploaded = uploadedImages;
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+                    imageResults.errors.push(`Error subiendo imágenes: ${errorMessage}`);
+                }
+            }
+
+            // Establecer imagen principal si se especificó y hay nuevas imágenes
+            if (primaryImageIndex !== undefined && imageResults.uploaded.length > 0) {
+                const primaryImageId = imageResults.uploaded[primaryImageIndex]?.id;
+                if (primaryImageId) {
+                    try {
+                        await this.setPrimaryImage(primaryImageId, productId);
+                    } catch (error) {
+                        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+                        imageResults.errors.push(`Error estableciendo imagen principal: ${errorMessage}`);
+                    }
+                }
+            }
+
+        } catch (error) {
+            console.error('Error procesando imágenes:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+            imageResults.errors.push(`Error general procesando imágenes: ${errorMessage}`);
+        }
+
+        return imageResults;
+    }
+
     // Validar que el archivo sea una imagen
     private static validateImageFile(file: Express.Multer.File): boolean {
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];

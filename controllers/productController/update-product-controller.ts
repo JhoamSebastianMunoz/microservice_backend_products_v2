@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import UpdateProductRequest from '../../Dto/productDto/UpdateProductDto';
 import ProductService from '../../services/ProductService';
 import ProductImageService from '../../services/ProductImageService';
+import { successResponse, notFoundResponse, createApiError } from '../../middleware/errorHandler';
 
 let update_product = async(req:Request, res:Response)=>{
     try {
@@ -29,76 +30,28 @@ let update_product = async(req:Request, res:Response)=>{
         const result = await ProductService.updateProduct(updateProductRequest);
         
         if (!result || result.affectedRows === 0) {
-            return res.status(404).json({ error: "Producto no encontrado." });
+            return res.status(404).json(notFoundResponse('Producto'));
         }
 
-        // Procesar imágenes si hay nuevas o se solicita eliminar
-        const imageResults: {
-            uploaded: any[],
-            deleted: string[],
-            errors: string[]
-        } = {
-            uploaded: [],
-            deleted: [],
-            errors: []
-        };
+        // Delegar procesamiento de imágenes al servicio
+        const imageResults = await ProductImageService.processProductImages(
+            parseInt(id),
+            images,
+            delete_images,
+            primary_image_index ? parseInt(primary_image_index) : undefined
+        );
 
-        try {
-            // Eliminar imágenes solicitadas
-            if (delete_images && Array.isArray(delete_images)) {
-                for (const imageId of delete_images) {
-                    try {
-                        await ProductImageService.deleteProductImage(parseInt(imageId));
-                        imageResults.deleted.push(imageId);
-                    } catch (error) {
-                        imageResults.errors.push(`Error eliminando imagen ${imageId}: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-                    }
-                }
-            }
-
-            // Subir nuevas imágenes
-            if (images.length > 0) {
-                try {
-                    const uploadedImages = await ProductImageService.uploadMultipleImages(
-                        parseInt(id), 
-                        images, 
-                        primary_image_index ? parseInt(primary_image_index) : undefined
-                    );
-                    imageResults.uploaded = uploadedImages;
-                } catch (error) {
-                    imageResults.errors.push(`Error subiendo imágenes: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-                }
-            }
-
-            // Establecer imagen principal si se especificó
-            if (primary_image_index !== undefined && imageResults.uploaded.length > 0) {
-                const primaryImageId = imageResults.uploaded[parseInt(primary_image_index)]?.id;
-                if (primaryImageId) {
-                    try {
-                        await ProductImageService.setPrimaryImage(primaryImageId, parseInt(id));
-                    } catch (error) {
-                        imageResults.errors.push(`Error estableciendo imagen principal: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-                    }
-                }
-            }
-
-        } catch (error) {
-            console.error('Error procesando imágenes:', error);
-            imageResults.errors.push(`Error general procesando imágenes: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-        }
-
-        return res.status(200).json({
-            status: 'Producto actualizado con éxito',
-            product_id: id,
+        return res.status(200).json(successResponse({
+            product_id: parseInt(id),
             images: imageResults
-        });
+        }, 'Producto actualizado con éxito'));
             
         }catch(error:any){
-            if(error && error.code == "ER_DUP_ENTRY"){
-                return res.status(500).json({errorInfo: error.sqlMessage})
-            }else{
-                return res.status(500).json({error: "Internal Server Error", details: error.message })
-            }
+            throw createApiError(
+                error.code === "ER_DUP_ENTRY" ? error.sqlMessage : "Error al actualizar producto",
+                error.code === "ER_DUP_ENTRY" ? 409 : 500,
+                error.message
+            );
         }
 };
 
