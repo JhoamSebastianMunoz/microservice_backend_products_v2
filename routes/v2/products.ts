@@ -1,8 +1,7 @@
 import express from "express";
-import registerProductValidator from '../../middleware/productMiddleware/registerProductValidator';
-import getProductValidator from '../../middleware/productMiddleware/getProductValidator';
-import updateProductValidator from '../../middleware/productMiddleware/updateProductValidator';
-import deleteProductValidator from '../../middleware/productMiddleware/deleteProductValidator';
+import { createProductValidator, getProductValidator, updateProductValidator, deleteProductValidator } from '../../middleware/productValidators';
+import { handleValidationErrors } from '../../middleware/validationMiddleware';
+import { errorHandler } from '../../middleware/errorHandler';
 import registerProductController from '../../controllers/productController/register-product-controller';
 import getProductsController from '../../controllers/productController/get-products-controller';
 import getProductController from '../../controllers/productController/get-product-controller';
@@ -18,8 +17,8 @@ const router = express.Router();
 router.post('/',  
     verifyToken, 
     checkRoleAndPermission(["ADMINISTRADOR"]), 
-    registerProductValidator.validatorParams, 
-    registerProductValidator.validator,
+    createProductValidator,
+    handleValidationErrors,
     registerMultipleImagesValidator,
     registerProductController
 );
@@ -28,14 +27,14 @@ router.post('/',
 router.get('/', getProductsController);
 
 // GET /api/v2/products/:id - Get specific product
-router.get('/:id', getProductValidator.validatorParams, getProductValidator.validator, getProductController);
+router.get('/:id', getProductValidator, handleValidationErrors, getProductController);
 
 // PUT /api/v2/products/:id - Update product
 router.put('/:id', 
     verifyToken, 
     checkRoleAndPermission(["ADMINISTRADOR"]), 
-    updateProductValidator.validatorParams, 
-    updateProductValidator.validator,
+    updateProductValidator,
+    handleValidationErrors,
     updateProductController
 );
 
@@ -43,9 +42,12 @@ router.put('/:id',
 router.delete('/:id', 
     verifyToken, 
     checkRoleAndPermission(["ADMINISTRADOR"]), 
-    deleteProductValidator.validatorParams,
-    deleteProductValidator.validator,
+    deleteProductValidator,
+    handleValidationErrors,
     deleteProductController
 );
+
+// Aplicar manejador de errores centralizado a todas las rutas
+router.use(errorHandler);
 
 export default router;
