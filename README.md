@@ -3,7 +3,7 @@
 Un microservicio backend robusto y escalable construido con **Express**,
 **TypeScript** y **MySQL** para la gestión de productos en una
 plataforma de e-commerce. Incluye autenticación con JWT, validación de
-datos, almacenamiento en Azure Blob Storage y documentación interactiva
+datos, almacenamiento en la nube con Supabase Storage y documentación interactiva
 con Swagger.
 
 ------------------------------------------------------------------------
@@ -34,7 +34,7 @@ con Swagger.
 -   Autenticación JWT para endpoints protegidos\
 -   Validación de datos robusta con express-validator\
 -   Encriptación de contraseñas con bcryptjs\
--   Almacenamiento en la nube con Azure Blob Storage\
+-   Almacenamiento en la nube con Supabase Storage\
 -   CORS habilitado para múltiples orígenes\
 -   Swagger UI para documentación interactiva\
 -   TypeScript para tipado estático\
@@ -64,7 +64,7 @@ El proyecto sigue una arquitectura basada en el patrón **MVC
 -   npm o yarn
 -   MySQL 5.7 o superior
 -   Git
--   (Opcional) Cuenta de Azure
+-   Cuenta de Supabase
 
 ------------------------------------------------------------------------
 
@@ -101,10 +101,6 @@ NODE_ENV=development
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura
 JWT_EXPIRES_IN=7d
 
-# Azure Storage (Opcional)
-AZURE_STORAGE_CONNECTION_STRING=tu_connection_string_azure
-AZURE_STORAGE_CONTAINER_NAME=nombre_contenedor
-
 # CORS
 CORS_ORIGIN=http://localhost:3000
 ```
@@ -136,7 +132,6 @@ mysql -h localhost -u tu_usuario -p tu_base_datos < database/schema.sql
   DB_PASSWORD                       Contraseña MySQL   Sí
   PORT                              Puerto servidor    No (3000)
   JWT_SECRET                        Clave JWT          Sí
-  AZURE_STORAGE_CONNECTION_STRING   Azure Storage      No
 ```
 ------------------------------------------------------------------------
 
@@ -229,7 +224,7 @@ http://localhost:3000/api-docs
 -   Validación de datos con express-validator
 -   Middleware de autorización
 -   Configuración CORS por entorno
--   Azure Blob Storage seguro
+-   Almacenamiento seguro con Supabase
 
 ------------------------------------------------------------------------
 
@@ -241,7 +236,7 @@ http://localhost:3000/api-docs
 -   jsonwebtoken
 -   bcryptjs
 -   express-validator
--   @azure/storage-blob
+-   @supabase/supabase-js
 -   multer
 -   uuid
 -   cors

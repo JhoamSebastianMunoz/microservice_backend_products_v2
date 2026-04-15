@@ -28,9 +28,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const allowedOrigins = [
   'http://localhost:10104',
-  'http://localhost:5173',  // Frontend en desarrollo
-  'https://ambitious-sky-070d67b0f.4.azurestaticapps.net',  // Frontend deployado
-  'https://backendproducts-eefufaaeaahzauee.eastus-01.azurewebsites.net'
+  'http://localhost:5173'  // Frontend en desarrollo
 ];
 const corsOptions = {
   origin: function (origin: any, callback: any) {

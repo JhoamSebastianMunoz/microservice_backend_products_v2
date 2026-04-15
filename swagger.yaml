@@ -7,8 +7,6 @@ info:
 servers:
   - url: http://localhost:10102/api/v2
     description: Servidor de desarrollo local
-  - url: https://backendproducts-eefufaaeaahzauee.eastus-01.azurewebsites.net/api/v2
-    description: Servidor de producción
   - url: http://localhost:10102
     description: Endpoints v1 heredados (depreciados)
 
