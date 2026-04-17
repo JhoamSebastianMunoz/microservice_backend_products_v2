@@ -19,7 +19,7 @@ dotenv.config();
 
 const app = express().use(bodyParser.json());
 // Cargar archivo YAML de Swagger
-const swaggerDocument = YAML.load("./swagger.yaml");
+const swaggerDocument = YAML.load(path.resolve(__dirname, "./swagger.yaml"));
 // verificar si el servidor esta funcionando
 app.get('/', (req, res) => {
   res.send('Servidor funcionando correctamente');
