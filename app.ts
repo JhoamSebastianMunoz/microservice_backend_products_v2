@@ -2,7 +2,8 @@ import express from "express";
 import bodyParser from 'body-parser';
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs"; // 
-import cors from 'cors'
+import cors from 'cors';
+import path from 'path';
 
 // Legacy routes removed - API v2 only
 
@@ -27,8 +28,9 @@ app.get('/', (req, res) => {
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const allowedOrigins = [
-  'http://localhost:10104',
-  'http://localhost:5173'  // Frontend en desarrollo
+  'http://localhost:10102',
+  'http://localhost:5173',  // Frontend en desarrollo
+  'https://microservice-backend-products-v2.vercel.app' // despliegue en Vercel
 ];
 const corsOptions = {
   origin: function (origin: any, callback: any) {
@@ -57,8 +59,13 @@ app.use('/api/v2/reports', reportsV2);
 // Configuración del puerto por donde correrá la aplicación
 const PORT = process.env.PORT || 10102;
 
-app.listen(PORT, () => {
-  console.log("Servidor ejecutándose en el puerto: ", PORT);
-}).on("error", (error) => {
-  throw new Error(error.message);
-});
+// Solo iniciar servidor en desarrollo (no en serverless/Vercel)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log("Servidor ejecutándose en el puerto: ", PORT);
+  }).on("error", (error) => {
+    throw new Error(error.message);
+  });
+}
+
+export default app;
