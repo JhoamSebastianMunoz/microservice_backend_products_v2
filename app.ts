@@ -1,7 +1,6 @@
 import express from "express";
 import bodyParser from 'body-parser';
-import swaggerUi from "swagger-ui-express";
-import YAML from "yamljs"; // 
+import YAML from "yamljs";
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
@@ -24,14 +23,9 @@ const swaggerPath = path.resolve(__dirname, "./swagger.yaml");
 const swaggerPathAlt = path.resolve(__dirname, "../swagger.yaml");
 const swaggerPathUsed = fs.existsSync(swaggerPath) ? swaggerPath : swaggerPathAlt;
 
-console.log('Loading swagger.yaml from:', swaggerPathUsed);
-console.log('File exists:', fs.existsSync(swaggerPathUsed));
-console.log('__dirname:', __dirname);
-
 let swaggerDocument;
 try {
   swaggerDocument = YAML.load(swaggerPathUsed);
-  console.log('Swagger document loaded successfully');
 } catch (error) {
   console.error('Error loading swagger.yaml:', error);
   swaggerDocument = { openapi: "3.0.0", info: { title: "Error", version: "1.0.0" }, paths: {} };
@@ -46,6 +40,68 @@ app.get('/swagger.yaml', (req, res) => {
   } else {
     res.status(404).json({ error: 'swagger.yaml not found' });
   }
+});
+
+// Serve swagger document as JSON for CDN-based Swagger UI
+app.get('/api-docs-json', (req, res) => {
+  res.json(swaggerDocument);
+});
+
+// Serve Swagger UI HTML page with CDN-hosted assets
+app.get('/api-docs', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>API de Productos TATSoft v2 - Swagger UI</title>
+      <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+      <style>
+        html {
+          box-sizing: border-box;
+          overflow: -moz-scrollbars-vertical;
+          overflow-y: scroll;
+        }
+        *,
+        *:before,
+        *:after {
+          box-sizing: inherit;
+        }
+        body {
+          margin: 0;
+          background: #fafafa;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="swagger-ui"></div>
+      <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js" charset="UTF-8"></script>
+      <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js" charset="UTF-8"></script>
+      <script>
+        window.onload = function() {
+          const ui = SwaggerUIBundle({
+            url: '/api-docs-json',
+            dom_id: '#swagger-ui',
+            deepLinking: true,
+            presets: [
+              SwaggerUIBundle.presets.standalone,
+              SwaggerUIBundle.presets.url
+            ],
+            layout: "StandaloneLayout",
+            defaultModelsExpandDepth: 1,
+            defaultModelExpandDepth: 1,
+            docExpansion: "list",
+            filter: true,
+            showRequestDuration: true,
+            tryItOutEnabled: true
+          });
+          window.ui = ui;
+        };
+      </script>
+    </body>
+    </html>
+  `);
 });
 
 // verificar si el servidor esta funcionando
@@ -206,7 +262,7 @@ app.get('/', (req, res) => {
           </div>
         </div>
         
-        <a href="/api-docs/" class="cta-button">
+        <a href="/api-docs" class="cta-button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
@@ -219,12 +275,6 @@ app.get('/', (req, res) => {
     </html>
   `);
 });
-// Montar la documentación Swagger en la ruta `/api-docs`
-console.log('Swagger document content before setup:', JSON.stringify(swaggerDocument, null, 2));
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
-  explorer: true,
-  customSiteTitle: "API de Productos TATSoft v2"
-}));
 
 const allowedOrigins = [
   'http://localhost:10102',
