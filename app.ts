@@ -83,12 +83,20 @@ app.get('/api-docs', (req, res) => {
             const ui = SwaggerUIBundle({
               url: '/api-docs-json',
               dom_id: '#swagger-ui',
-              deepLinking: true,
+              deepLinking: false,
               presets: [
                 SwaggerUIBundle.presets.standalone,
                 SwaggerUIBundle.presets.url
               ],
-              layout: "StandaloneLayout"
+              layout: "StandaloneLayout",
+              persistAuthorization: false,
+              tryItOutEnabled: true,
+              displayRequestDuration: true,
+              displayOperationId: false,
+              filter: false,
+              showExtensions: false,
+              showCommonExtensions: false,
+              docExpansion: "none"
             });
             window.ui = ui;
           } catch (error) {
