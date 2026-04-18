@@ -77,26 +77,24 @@ app.get('/api-docs', (req, res) => {
     <body>
       <div id="swagger-ui"></div>
       <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js" charset="UTF-8"></script>
-      <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-standalone-preset.js" charset="UTF-8"></script>
       <script>
         window.onload = function() {
-          const ui = SwaggerUIBundle({
-            url: '/api-docs-json',
-            dom_id: '#swagger-ui',
-            deepLinking: true,
-            presets: [
-              SwaggerUIBundle.presets.standalone,
-              SwaggerUIBundle.presets.url
-            ],
-            layout: "StandaloneLayout",
-            defaultModelsExpandDepth: 1,
-            defaultModelExpandDepth: 1,
-            docExpansion: "list",
-            filter: true,
-            showRequestDuration: true,
-            tryItOutEnabled: true
-          });
-          window.ui = ui;
+          try {
+            const ui = SwaggerUIBundle({
+              url: '/api-docs-json',
+              dom_id: '#swagger-ui',
+              deepLinking: true,
+              presets: [
+                SwaggerUIBundle.presets.standalone,
+                SwaggerUIBundle.presets.url
+              ],
+              layout: "StandaloneLayout"
+            });
+            window.ui = ui;
+          } catch (error) {
+            console.error('Error initializing Swagger UI:', error);
+            document.getElementById('swagger-ui').innerHTML = '<div style="padding: 20px; color: red;">Error loading Swagger UI: ' + error.message + '</div>';
+          }
         };
       </script>
     </body>
