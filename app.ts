@@ -220,6 +220,7 @@ app.get('/', (req, res) => {
   `);
 });
 // Montar la documentación Swagger en la ruta `/api-docs`
+console.log('Swagger document content before setup:', JSON.stringify(swaggerDocument, null, 2));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
   explorer: true,
   customSiteTitle: "API de Productos TATSoft v2"
