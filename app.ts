@@ -22,7 +22,20 @@ const app = express().use(bodyParser.json());
 // Cargar archivo YAML de Swagger
 const swaggerPath = path.resolve(__dirname, "./swagger.yaml");
 const swaggerPathAlt = path.resolve(__dirname, "../swagger.yaml");
-const swaggerDocument = YAML.load(fs.existsSync(swaggerPath) ? swaggerPath : swaggerPathAlt);
+const swaggerPathUsed = fs.existsSync(swaggerPath) ? swaggerPath : swaggerPathAlt;
+
+console.log('Loading swagger.yaml from:', swaggerPathUsed);
+console.log('File exists:', fs.existsSync(swaggerPathUsed));
+console.log('__dirname:', __dirname);
+
+let swaggerDocument;
+try {
+  swaggerDocument = YAML.load(swaggerPathUsed);
+  console.log('Swagger document loaded successfully');
+} catch (error) {
+  console.error('Error loading swagger.yaml:', error);
+  swaggerDocument = { openapi: "3.0.0", info: { title: "Error", version: "1.0.0" }, paths: {} };
+}
 
 // Serve swagger.yaml as a separate endpoint for Vercel compatibility
 app.get('/swagger.yaml', (req, res) => {
@@ -207,7 +220,10 @@ app.get('/', (req, res) => {
   `);
 });
 // Montar la documentación Swagger en la ruta `/api-docs`
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+  explorer: true,
+  customSiteTitle: "API de Productos TATSoft v2"
+}));
 
 const allowedOrigins = [
   'http://localhost:10102',
