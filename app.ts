@@ -23,6 +23,18 @@ const app = express().use(bodyParser.json());
 const swaggerPath = path.resolve(__dirname, "./swagger.yaml");
 const swaggerPathAlt = path.resolve(__dirname, "../swagger.yaml");
 const swaggerDocument = YAML.load(fs.existsSync(swaggerPath) ? swaggerPath : swaggerPathAlt);
+
+// Serve swagger.yaml as a separate endpoint for Vercel compatibility
+app.get('/swagger.yaml', (req, res) => {
+  const finalPath = fs.existsSync(swaggerPath) ? swaggerPath : swaggerPathAlt;
+  
+  if (fs.existsSync(finalPath)) {
+    res.sendFile(finalPath);
+  } else {
+    res.status(404).json({ error: 'swagger.yaml not found' });
+  }
+});
+
 // verificar si el servidor esta funcionando
 app.get('/', (req, res) => {
   res.send(`
@@ -181,7 +193,7 @@ app.get('/', (req, res) => {
           </div>
         </div>
         
-        <a href="/api-docs" class="cta-button">
+        <a href="/api-docs/" class="cta-button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
