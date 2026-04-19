@@ -78,10 +78,11 @@ app.get('/api-docs', (req, res) => {
       <div id="swagger-ui"></div>
       <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js" charset="UTF-8"></script>
       <script>
+        const spec = ${JSON.stringify(swaggerDocument)};
         window.onload = function() {
           try {
             const ui = SwaggerUIBundle({
-              url: '/api-docs-json',
+              spec: spec,
               dom_id: '#swagger-ui',
               deepLinking: false,
               presets: [
