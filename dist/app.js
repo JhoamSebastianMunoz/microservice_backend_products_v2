@@ -5,12 +5,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
-const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
-const yamljs_1 = __importDefault(require("yamljs")); // 
+const yamljs_1 = __importDefault(require("yamljs"));
 const cors_1 = __importDefault(require("cors"));
 const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 // Legacy routes removed - API v2 only
+// Import Scalar for API documentation
+const express_api_reference_1 = require("@scalar/express-api-reference");
 // V2 API Routes
 const products_1 = __importDefault(require("./routes/v2/products"));
 const categories_1 = __importDefault(require("./routes/v2/categories"));
@@ -20,10 +21,40 @@ const reports_1 = __importDefault(require("./routes/v2/reports"));
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const app = (0, express_1.default)().use(body_parser_1.default.json());
-// Cargar archivo YAML de Swagger
+// Cargar archivo YAML de OpenAPI
 const swaggerPath = path_1.default.resolve(__dirname, "./swagger.yaml");
 const swaggerPathAlt = path_1.default.resolve(__dirname, "../swagger.yaml");
-const swaggerDocument = yamljs_1.default.load(fs_1.default.existsSync(swaggerPath) ? swaggerPath : swaggerPathAlt);
+const swaggerPathUsed = fs_1.default.existsSync(swaggerPath) ? swaggerPath : swaggerPathAlt;
+let swaggerDocument;
+try {
+    swaggerDocument = yamljs_1.default.load(swaggerPathUsed);
+}
+catch (error) {
+    console.error('Error loading swagger.yaml:', error);
+    swaggerDocument = { openapi: "3.0.0", info: { title: "Error", version: "1.0.0" }, paths: {} };
+}
+// Serve swagger.yaml as a separate endpoint for Vercel compatibility
+app.get('/swagger.yaml', (req, res) => {
+    const finalPath = fs_1.default.existsSync(swaggerPath) ? swaggerPath : swaggerPathAlt;
+    if (fs_1.default.existsSync(finalPath)) {
+        res.sendFile(finalPath);
+    }
+    else {
+        res.status(404).json({ error: 'swagger.yaml not found' });
+    }
+});
+// Serve OpenAPI spec as JSON for Scalar documentation
+app.get('/api-docs-json', (req, res) => {
+    res.json(swaggerDocument);
+});
+// Serve API Documentation with Scalar
+app.use('/api-docs', (0, express_api_reference_1.apiReference)({
+    spec: {
+        url: '/api-docs-json',
+    },
+    theme: 'default',
+    layout: 'modern',
+}));
 // verificar si el servidor esta funcionando
 app.get('/', (req, res) => {
     res.send(`
@@ -186,7 +217,7 @@ app.get('/', (req, res) => {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
-          Ver Documentación Swagger
+          Ver Documentación API
         </a>
         
         <div class="status">Servidor funcionando correctamente</div>
@@ -195,8 +226,6 @@ app.get('/', (req, res) => {
     </html>
   `);
 });
-// Montar la documentación Swagger en la ruta `/api-docs`
-app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(swaggerDocument));
 const allowedOrigins = [
     'http://localhost:10102',
     'http://localhost:5173', // Frontend en desarrollo

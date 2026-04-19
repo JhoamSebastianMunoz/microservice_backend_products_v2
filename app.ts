@@ -7,6 +7,9 @@ import fs from 'fs';
 
 // Legacy routes removed - API v2 only
 
+// Import Scalar for API documentation
+import { apiReference } from '@scalar/express-api-reference';
+
 // V2 API Routes
 import productsV2 from './routes/v2/products';
 import categoriesV2 from './routes/v2/categories';
@@ -18,7 +21,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express().use(bodyParser.json());
-// Cargar archivo YAML de Swagger
+// Cargar archivo YAML de OpenAPI
 const swaggerPath = path.resolve(__dirname, "./swagger.yaml");
 const swaggerPathAlt = path.resolve(__dirname, "../swagger.yaml");
 const swaggerPathUsed = fs.existsSync(swaggerPath) ? swaggerPath : swaggerPathAlt;
@@ -42,74 +45,19 @@ app.get('/swagger.yaml', (req, res) => {
   }
 });
 
-// Serve swagger document as JSON for CDN-based Swagger UI
+// Serve OpenAPI spec as JSON for Scalar documentation
 app.get('/api-docs-json', (req, res) => {
   res.json(swaggerDocument);
 });
 
-// Serve Swagger UI HTML page with CDN-hosted assets
-app.get('/api-docs', (req, res) => {
-  res.send(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>API de Productos TATSoft v2 - Swagger UI</title>
-      <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
-      <style>
-        html {
-          box-sizing: border-box;
-          overflow: -moz-scrollbars-vertical;
-          overflow-y: scroll;
-        }
-        *,
-        *:before,
-        *:after {
-          box-sizing: inherit;
-        }
-        body {
-          margin: 0;
-          background: #fafafa;
-        }
-      </style>
-    </head>
-    <body>
-      <div id="swagger-ui"></div>
-      <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js" charset="UTF-8"></script>
-      <script>
-        const spec = ${JSON.stringify(swaggerDocument)};
-        window.onload = function() {
-          try {
-            const ui = SwaggerUIBundle({
-              spec: spec,
-              dom_id: '#swagger-ui',
-              deepLinking: false,
-              presets: [
-                SwaggerUIBundle.presets.standalone,
-                SwaggerUIBundle.presets.url
-              ],
-              layout: "StandaloneLayout",
-              persistAuthorization: false,
-              tryItOutEnabled: true,
-              displayRequestDuration: true,
-              displayOperationId: false,
-              filter: false,
-              showExtensions: false,
-              showCommonExtensions: false,
-              docExpansion: "none"
-            });
-            window.ui = ui;
-          } catch (error) {
-            console.error('Error initializing Swagger UI:', error);
-            document.getElementById('swagger-ui').innerHTML = '<div style="padding: 20px; color: red;">Error loading Swagger UI: ' + error.message + '</div>';
-          }
-        };
-      </script>
-    </body>
-    </html>
-  `);
-});
+// Serve API Documentation with Scalar
+app.use('/api-docs', apiReference({
+  spec: {
+    url: '/api-docs-json',
+  },
+  theme: 'default',
+  layout: 'modern',
+}));
 
 // verificar si el servidor esta funcionando
 app.get('/', (req, res) => {
@@ -273,7 +221,7 @@ app.get('/', (req, res) => {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
           </svg>
-          Ver Documentación Swagger
+          Ver Documentación API
         </a>
         
         <div class="status">Servidor funcionando correctamente</div>
