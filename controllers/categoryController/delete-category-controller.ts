@@ -6,8 +6,8 @@ import CategoriaService from "../../services/categoriaService";
 
 let delete_category = async (req: Request, res: Response) => {  
     try {
-        const { id_categoria } = req.params;
-        const result = await CategoriaService.deleteCategoria(Number(id_categoria));
+        const { id } = req.params;
+        const result = await CategoriaService.deleteCategoria(Number(id));
         if (!result) {
             return res.status(404).json({ error: "Categoria no encontrada." });
         }

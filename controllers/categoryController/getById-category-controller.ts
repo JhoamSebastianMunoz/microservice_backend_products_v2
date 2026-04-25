@@ -3,8 +3,8 @@ import CategoriaService from "../../services/categoriaService";
 
 let get_category = async (req: Request, res: Response) => {  
     try {
-        const { id_categoria } = req.params;
-        const result = await CategoriaService.getCategoriaById(Number(id_categoria));
+        const { id } = req.params;
+        const result = await CategoriaService.getCategoriaById(Number(id));
         if(!result) {
             return res.status(404).json({message: 'Categoria no encontrada'})
         }else{

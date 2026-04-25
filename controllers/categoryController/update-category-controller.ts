@@ -4,10 +4,10 @@ import Categoria from '../../Dto/productDto/CategoriaDto';
 
 let update_category = async(req:Request, res:Response)=>{
     try {
-        const{ id_categoria } =req.params;
+        const { id } = req.params;
         const { nombre_categoria } = req.body;
         
-        const result = await CategoriaService.updateCategoria(new Categoria(nombre_categoria), Number(id_categoria));
+        const result = await CategoriaService.updateCategoria(new Categoria(nombre_categoria), Number(id));
             if(!result){
                 return res.status(404).json({ error: "Categoria no encontrada." });
             }

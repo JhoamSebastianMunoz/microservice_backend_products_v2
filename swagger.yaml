@@ -1,8 +1,47 @@
 openapi: 3.0.0
 info:
   title: API de Productos TATSoft v2
-  description: API RESTful para gestión de productos con endpoints v2 mejorados y compatibilidad con v1
+  description: |
+    API RESTful para gestión completa de productos, categorías, imágenes, stock y reportes.
+
+    ## Características Principales
+    - **Arquitectura**: SOLID con repositorios y servicios separados
+    - **Persistencia**: Supabase (PostgreSQL) con cliente oficial
+    - **Autenticación**: JWT Bearer tokens
+    - **Autorización**: Roles (ADMINISTRADOR)
+    - **Documentación**: Scalar API Reference interactiva
+
+    ## Cambios Recientes (2025-04)
+    - Migración completa a Supabase desde PostgreSQL directo
+    - Unificación de documentación OpenAPI
+    - Actualización de schemas según DTOs actuales
+
+    ## Endpoints Públicos
+    - `GET /api/v2/products` - Lista de productos
+    - `GET /api/v2/products/{id}` - Producto específico
+    - `GET /api/v2/categories` - Lista de categorías
+    - `GET /api/v2/categories/{id}` - Categoría específica
+    - `GET /api/v2/images/{id}` - Información de imagen
+    - `GET /api/v2/stock/{productId}` - Stock de producto
+    - `GET /api/v2/stock/history` - Historial de stock
+
+    ## Autenticación
+    Todos los endpoints de escritura requieren autenticación Bearer:
+    ```
+    Authorization: Bearer <token_jwt>
+    ```
+
+    ## Códigos de Error Supabase
+    - `PGRST116` - Recurso no encontrado (404)
+    - `23505` - Violación de constraint único
+    - `23503` - Violación de foreign key
   version: 2.0.0
+  contact:
+    name: TATSoft Support
+    email: soporte@tatsoft.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 
 servers:
   - url: https://microservice-backend-products-v2.vercel.app/api/v2
@@ -165,31 +204,33 @@ components:
     ImagenV2:
       type: object
       properties:
-        id_imagen:
+        id:
           type: integer
           description: ID único de la imagen
           example: 1
-        nombre_archivo:
-          type: string
-          description: Nombre del archivo de imagen
-          example: "producto_123.jpg"
-        url_imagen:
+        product_id:
+          type: integer
+          description: ID del producto asociado
+          example: 1
+        image_url:
           type: string
           description: URL completa de la imagen
           example: "https://storage.example.com/images/producto_123.jpg"
-        tipo_mime:
+        storage_path:
           type: string
-          description: Tipo MIME del archivo
-          example: "image/jpeg"
-        tamaño_archivo:
-          type: integer
-          description: Tamaño del archivo en bytes
-          example: 1024000
-        fecha_subida:
+          description: Ruta de almacenamiento en el storage
+          example: "productos/producto_123.jpg"
+        is_primary:
+          type: boolean
+          description: Indica si es la imagen principal del producto
+          example: true
+          default: false
+        created_at:
           type: string
           format: date-time
-          description: Fecha de subida de la imagen
+          description: Fecha de creación del registro
           readOnly: true
+          example: "2025-04-25T10:30:00Z"
 
     StockV2:
       type: object
@@ -203,29 +244,47 @@ components:
           type: integer
           description: ID del producto
           example: 1
-        cantidad:
+        cantidad_ingresada:
           type: integer
-          description: Cantidad de stock (positivo para entrada, negativo para salida)
+          description: Cantidad de unidades ingresadas
           example: 10
-        tipo_movimiento:
+        fecha_vencimiento:
           type: string
-          description: Tipo de movimiento (ENTRADA/SALIDA/AJUSTE)
-          example: "ENTRADA"
-          enum: ["ENTRADA", "SALIDA", "AJUSTE"]
-        motivo:
+          format: date
+          description: Fecha de vencimiento del lote (opcional)
+          example: "2025-12-31"
+          nullable: true
+        codigo_factura:
           type: string
-          description: Motivo del movimiento de stock
-          example: "Compra de proveedor"
-          maxLength: 255
-        fecha_movimiento:
+          description: Código de factura de compra
+          example: "FAC-001-2025"
+        costo_total:
+          type: number
+          format: float
+          description: Costo total de la compra
+          example: 5000.00
+        costo_unitario:
+          type: number
+          format: float
+          description: Costo unitario calculado
+          example: 500.00
+        porcentaje_venta:
+          type: number
+          description: Porcentaje de ganancia para calcular precio de venta
+          example: 30
+        fecha_ingreso:
           type: string
           format: date-time
-          description: Fecha del movimiento
+          description: Fecha del registro de ingreso
           readOnly: true
         id_usuario:
           type: integer
-          description: ID del usuario que realizó el movimiento
+          description: ID del usuario que registró el ingreso
           example: 1
+        nombre_producto:
+          type: string
+          description: Nombre del producto (en respuestas con JOIN)
+          example: "Laptop Gaming"
 
     RespuestaExitosa:
       type: object
@@ -1115,8 +1174,8 @@ paths:
         - bearerAuth: []
       tags:
         - Stock v2
-      summary: Actualizar stock de producto
-      description: Actualiza la cantidad de stock de un producto específico
+      summary: Registrar ingreso de stock
+      description: Registra un nuevo ingreso de stock para un producto específico. Actualiza automáticamente el precio del producto según el costo unitario y porcentaje de venta.
       parameters:
         - name: productId
           in: path
@@ -1132,30 +1191,57 @@ paths:
             schema:
               type: object
               required:
-                - cantidad
+                - cantidad_ingresada
+                - codigo_factura
+                - costo_total
+                - costo_unitario
+                - porcentaje_venta
+                - id_usuario
               properties:
-                cantidad:
+                cantidad_ingresada:
                   type: integer
-                  description: Cantidad de stock a agregar (positivo) o remover (negativo)
+                  minimum: 1
+                  description: Cantidad de unidades ingresadas
                   example: 10
-                motivo:
+                fecha_vencimiento:
                   type: string
-                  description: Motivo del ajuste de stock
-                  example: "Nuevo inventario recibido"
+                  format: date
+                  description: Fecha de vencimiento del lote (opcional)
+                  example: "2025-12-31"
+                codigo_factura:
+                  type: string
+                  description: Código de factura de compra
+                  example: "FAC-001-2025"
+                costo_total:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: Costo total de la compra
+                  example: 5000.00
+                costo_unitario:
+                  type: number
+                  format: float
+                  minimum: 0
+                  description: Costo unitario del producto
+                  example: 500.00
+                porcentaje_venta:
+                  type: number
+                  minimum: 0
+                  description: Porcentaje de ganancia para calcular precio de venta
+                  example: 30
+                id_usuario:
+                  type: integer
+                  description: ID del usuario que registra el ingreso
+                  example: 1
       responses:
-        '200':
-          description: Stock actualizado exitosamente
+        '201':
+          description: Stock registrado exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/RespuestaExitosa'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/StockV2'
+                $ref: '#/components/schemas/RespuestaExitosa'
         '400':
-          description: Solicitud incorrecta
+          description: Datos requeridos faltantes
           content:
             application/json:
               schema:
@@ -1229,6 +1315,61 @@ paths:
                         items:
                           $ref: '#/components/schemas/StockV2'
         '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+
+  # Endpoints Reportes v2
+  /reports/low-stock:
+    get:
+      security:
+        - bearerAuth: []
+      tags:
+        - Reportes v2
+      summary: Obtener reporte de stock bajo
+      description: Recupera productos con stock menor al umbral especificado
+      parameters:
+        - name: umbral
+          in: query
+          description: Umbral de stock para el reporte (default 15)
+          schema:
+            type: integer
+            minimum: 1
+            default: 15
+      responses:
+        '200':
+          description: Reporte generado exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductoV2'
+        '401':
+          description: No autorizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '404':
+          description: No hay productos con stock bajo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespuestaErrorV2'
+
+  # Legacy v1 Endpoints (Deprecated)
+  /register-product:
+    post:
+      deprecated: true
       security:
         - bearerAuth: []
       tags:

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const config_db_1 = __importDefault(require("../config/config-db"));
+const config_supabaseStorage_1 = __importDefault(require("../config/config-supabaseStorage"));
 const ProductImageDto_1 = __importDefault(require("../Dto/productDto/ProductImageDto"));
 class ProductImageRepository {
     // Crear múltiples imágenes para un producto
@@ -20,134 +20,116 @@ class ProductImageRepository {
         return __awaiter(this, void 0, void 0, function* () {
             if (images.length === 0)
                 return [];
-            const values = images.map(img => `(${img.product_id}, '${img.image_url}', '${img.storage_path}', ${img.is_primary})`).join(', ');
-            const query = `
-            INSERT INTO product_images (product_id, image_url, storage_path, is_primary)
-            VALUES ${values}
-            RETURNING id, product_id, image_url, storage_path, created_at, is_primary
-        `;
-            try {
-                const result = yield config_db_1.default.query(query);
-                return result.rows.map(row => new ProductImageDto_1.default(row.product_id, row.image_url, row.storage_path, row.is_primary, row.id, row.created_at));
-            }
-            catch (error) {
-                console.error('Error creating multiple product images:', error);
-                throw new Error('Failed to create product images');
-            }
+            const insertData = images.map(img => ({
+                product_id: img.product_id,
+                image_url: img.image_url,
+                storage_path: img.storage_path,
+                is_primary: img.is_primary
+            }));
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('product_images')
+                .insert(insertData)
+                .select('id, product_id, image_url, storage_path, created_at, is_primary');
+            if (error)
+                throw error;
+            return (data || []).map(row => new ProductImageDto_1.default(row.product_id, row.image_url, row.storage_path, row.is_primary, row.id, new Date(row.created_at)));
         });
     }
     // Obtener todas las imágenes de un producto
     static getImagesByProductId(productId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const query = `
-            SELECT id, product_id, image_url, storage_path, created_at, is_primary
-            FROM product_images 
-            WHERE product_id = $1 
-            ORDER BY is_primary DESC, created_at ASC
-        `;
-            try {
-                const result = yield config_db_1.default.query(query, [productId]);
-                return result.rows.map(row => new ProductImageDto_1.default(row.product_id, row.image_url, row.storage_path, row.is_primary, row.id, row.created_at));
-            }
-            catch (error) {
-                console.error('Error getting product images:', error);
-                throw new Error('Failed to get product images');
-            }
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('product_images')
+                .select('*')
+                .eq('product_id', productId)
+                .order('is_primary', { ascending: false })
+                .order('created_at', { ascending: true });
+            if (error)
+                throw error;
+            return (data || []).map(row => new ProductImageDto_1.default(row.product_id, row.image_url, row.storage_path, row.is_primary, row.id, row.created_at ? new Date(row.created_at) : undefined));
         });
     }
     // Obtener imagen principal de un producto
     static getPrimaryImageByProductId(productId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const query = `
-            SELECT id, product_id, image_url, storage_path, created_at, is_primary
-            FROM product_images 
-            WHERE product_id = $1 AND is_primary = true
-            LIMIT 1
-        `;
-            try {
-                const result = yield config_db_1.default.query(query, [productId]);
-                if (result.rows.length === 0)
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('product_images')
+                .select('*')
+                .eq('product_id', productId)
+                .eq('is_primary', true)
+                .single();
+            if (error) {
+                if (error.code === 'PGRST116')
                     return null;
-                const row = result.rows[0];
-                return new ProductImageDto_1.default(row.product_id, row.image_url, row.storage_path, row.is_primary, row.id, row.created_at);
+                throw error;
             }
-            catch (error) {
-                console.error('Error getting primary product image:', error);
-                throw new Error('Failed to get primary product image');
-            }
+            return new ProductImageDto_1.default(data.product_id, data.image_url, data.storage_path, data.is_primary, data.id, data.created_at ? new Date(data.created_at) : undefined);
         });
     }
     // Eliminar una imagen específica
     static deleteImage(imageId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const query = 'DELETE FROM product_images WHERE id = $1 RETURNING id';
-            try {
-                const result = yield config_db_1.default.query(query, [imageId]);
-                return result.rows.length > 0;
-            }
-            catch (error) {
-                console.error('Error deleting product image:', error);
-                throw new Error('Failed to delete product image');
-            }
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('product_images')
+                .delete()
+                .eq('id', imageId)
+                .select('id');
+            if (error)
+                throw error;
+            return data.length > 0;
         });
     }
     // Eliminar todas las imágenes de un producto
     static deleteAllImagesByProductId(productId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const query = 'DELETE FROM product_images WHERE product_id = $1 RETURNING product_id';
-            try {
-                const result = yield config_db_1.default.query(query, [productId]);
-                return result.rows.length > 0;
-            }
-            catch (error) {
-                console.error('Error deleting all product images:', error);
-                throw new Error('Failed to delete all product images');
-            }
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('product_images')
+                .delete()
+                .eq('product_id', productId)
+                .select('product_id');
+            if (error)
+                throw error;
+            return data.length > 0;
         });
     }
     // Establecer imagen principal
+    // Nota: Esta operación realiza dos updates. En caso de falla entre ambos,
+    // el estado puede quedar inconsistente (sin imagen principal).
     static setPrimaryImage(imageId, productId) {
         return __awaiter(this, void 0, void 0, function* () {
-            const client = yield config_db_1.default.connect();
-            try {
-                yield client.query('BEGIN');
-                // Quitar estado principal a todas las imágenes del producto
-                yield client.query('UPDATE product_images SET is_primary = false WHERE product_id = $1', [productId]);
-                // Establecer nueva imagen principal
-                const result = yield client.query('UPDATE product_images SET is_primary = true WHERE id = $1 AND product_id = $2 RETURNING id', [imageId, productId]);
-                yield client.query('COMMIT');
-                return result.rows.length > 0;
-            }
-            catch (error) {
-                yield client.query('ROLLBACK');
-                console.error('Error setting primary image:', error);
-                throw new Error('Failed to set primary image');
-            }
-            finally {
-                client.release();
-            }
+            // Paso 1: Quitar estado principal a todas las imágenes del producto
+            const { error: errorReset } = yield config_supabaseStorage_1.default
+                .from('product_images')
+                .update({ is_primary: false })
+                .eq('product_id', productId);
+            if (errorReset)
+                throw errorReset;
+            // Paso 2: Establecer nueva imagen principal
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('product_images')
+                .update({ is_primary: true })
+                .eq('id', imageId)
+                .eq('product_id', productId)
+                .select('id');
+            if (error)
+                throw error;
+            return data.length > 0;
         });
     }
     // Actualizar información de una imagen
     static updateImage(imageId, imageUrl, storagePath) {
         return __awaiter(this, void 0, void 0, function* () {
-            const query = `
-            UPDATE product_images 
-            SET image_url = $1, storage_path = $2 
-            WHERE id = $3 
-            RETURNING id, product_id, image_url, storage_path, created_at, is_primary
-        `;
-            try {
-                const result = yield config_db_1.default.query(query, [imageUrl, storagePath, imageId]);
-                if (result.rows.length === 0)
-                    return null;
-                const row = result.rows[0];
-                return new ProductImageDto_1.default(row.product_id, row.image_url, row.storage_path, row.is_primary, row.id, row.created_at);
-            }
-            catch (error) {
-                console.error('Error updating product image:', error);
-                throw new Error('Failed to update product image');
-            }
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('product_images')
+                .update({ image_url: imageUrl, storage_path: storagePath })
+                .eq('id', imageId)
+                .select('*');
+            if (error)
+                throw error;
+            if (!data || data.length === 0)
+                return null;
+            const row = data[0];
+            return new ProductImageDto_1.default(row.product_id, row.image_url, row.storage_path, row.is_primary, row.id, row.created_at ? new Date(row.created_at) : undefined);
         });
     }
 }

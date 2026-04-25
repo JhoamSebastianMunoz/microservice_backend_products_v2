@@ -1,13 +1,15 @@
-import db from '../config/config-db';
+import supabaseClient from '../config/config-supabaseStorage';
 import GetProduct from "../Dto/productDto/GetProductDto";
 
-class ReportsRepository{
+class ReportsRepository {
     static async getAllProductsLowStock(umbral: number = 15): Promise<GetProduct[]> {
-        const sql = `
-            SELECT * FROM productos WHERE cantidad_ingreso < $1
-        `;
-        const result = await db.query(sql, [umbral]); 
-        return result.rows as GetProduct[];
+        const { data, error } = await supabaseClient
+            .from('productos')
+            .select('*')
+            .lt('cantidad_ingreso', umbral);
+        
+        if (error) throw error;
+        return data as GetProduct[];
     }
 }
 

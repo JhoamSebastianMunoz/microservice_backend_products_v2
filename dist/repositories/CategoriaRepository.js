@@ -12,43 +12,66 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const config_db_1 = __importDefault(require("../config/config-db"));
+const config_supabaseStorage_1 = __importDefault(require("../config/config-supabaseStorage"));
 class CategoriaRepository {
     static getAll() {
         return __awaiter(this, void 0, void 0, function* () {
-            const sql = 'SELECT * FROM categorias';
-            const result = yield config_db_1.default.query(sql);
-            return result.rows;
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('categorias')
+                .select('*');
+            if (error)
+                throw error;
+            return data;
         });
     }
     static getById(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const sql = 'SELECT * FROM categorias WHERE id_categoria = $1';
-            const result = yield config_db_1.default.query(sql, [id]);
-            return result.rows.length > 0 ? result.rows[0] : null;
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('categorias')
+                .select('*')
+                .eq('id_categoria', id)
+                .single();
+            if (error) {
+                if (error.code === 'PGRST116')
+                    return null;
+                throw error;
+            }
+            return data;
         });
     }
     static add(categoria) {
         return __awaiter(this, void 0, void 0, function* () {
-            const sql = 'INSERT INTO categorias (nombre_categoria) VALUES ($1) RETURNING *';
-            const values = [categoria.nombre_categoria];
-            const result = yield config_db_1.default.query(sql, values);
-            return result.rows[0];
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('categorias')
+                .insert([{ nombre_categoria: categoria.nombre_categoria }])
+                .select('*');
+            if (error)
+                throw error;
+            return data[0];
         });
     }
     static update(id, categoria) {
         return __awaiter(this, void 0, void 0, function* () {
-            const sql = 'UPDATE categorias SET nombre_categoria = $1 WHERE id_categoria = $2 RETURNING *';
-            const values = [categoria.nombre_categoria, id];
-            const result = yield config_db_1.default.query(sql, values);
-            return result.rows.length > 0;
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('categorias')
+                .update({ nombre_categoria: categoria.nombre_categoria })
+                .eq('id_categoria', id)
+                .select('*');
+            if (error)
+                throw error;
+            return data.length > 0;
         });
     }
     static delete(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            const sql = 'DELETE FROM categorias WHERE id_categoria = $1 RETURNING *';
-            const result = yield config_db_1.default.query(sql, [id]);
-            return result.rows.length > 0;
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('categorias')
+                .delete()
+                .eq('id_categoria', id)
+                .select('*');
+            if (error)
+                throw error;
+            return data.length > 0;
         });
     }
 }

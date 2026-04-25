@@ -12,15 +12,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const config_db_1 = __importDefault(require("../config/config-db"));
+const config_supabaseStorage_1 = __importDefault(require("../config/config-supabaseStorage"));
 class ReportsRepository {
     static getAllProductsLowStock() {
         return __awaiter(this, arguments, void 0, function* (umbral = 15) {
-            const sql = `
-            SELECT * FROM productos WHERE cantidad_ingreso < $1
-        `;
-            const result = yield config_db_1.default.query(sql, [umbral]);
-            return result.rows;
+            const { data, error } = yield config_supabaseStorage_1.default
+                .from('productos')
+                .select('*')
+                .lt('cantidad_ingreso', umbral);
+            if (error)
+                throw error;
+            return data;
         });
     }
 }

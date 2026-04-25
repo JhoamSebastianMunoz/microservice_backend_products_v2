@@ -2,28 +2,65 @@
 
 ## Overview
 
-Esta documentación describe la API v2 optimizada del microservicio de productos, implementada con arquitectura SOLID, caché inteligente y validaciones robustas.
+Esta documentación describe la API v2 del microservicio de productos, implementada con arquitectura SOLID, persistencia en Supabase y validaciones robustas.
 
 ## Base URL
 
+**Producción:**
 ```
-https://api.example.com/api/v2
+https://microservice-backend-products-v2.vercel.app/api/v2
+```
+
+**Desarrollo Local:**
+```
+http://localhost:10102/api/v2
+```
+
+## Documentación Interactiva
+
+Accede a la documentación interactiva generada con Scalar:
+```
+https://microservice-backend-products-v2.vercel.app/api-docs
 ```
 
 ## Autenticación
 
-Todos los endpoints (excepto GET públicos) requieren autenticación mediante token JWT en el header:
+Todos los endpoints de escritura (POST, PUT, DELETE) requieren autenticación mediante token JWT en el header:
 
 ```
 Authorization: Bearer <token>
 ```
 
+Los endpoints GET de consulta son públicos y no requieren autenticación.
+
 ## Permisos
 
-Se requieren permisos específicos según la operación:
-- **LECTURA**: Para operaciones GET
-- **ESCRITURA**: Para operaciones POST, PUT, DELETE
-- **ADMINISTRADOR**: Para todas las operaciones
+El sistema utiliza un modelo de permisos simplificado:
+- **ADMINISTRADOR**: Rol requerido para todas las operaciones de escritura
+- **Público**: Lectura de productos, categorías, stock e imágenes sin autenticación
+
+## Endpoints Públicos (Sin Autenticación)
+
+- `GET /api/v2/products` - Lista de productos
+- `GET /api/v2/products/{id}` - Producto específico
+- `GET /api/v2/categories` - Lista de categorías  
+- `GET /api/v2/categories/{id}` - Categoría específica
+- `GET /api/v2/images/{id}` - Información de imagen
+- `GET /api/v2/stock/{productId}` - Stock de producto
+- `GET /api/v2/stock/history` - Historial de movimientos de stock
+
+## Endpoints Protegidos (Requieren ADMINISTRADOR)
+
+- `POST /api/v2/products` - Crear producto
+- `PUT /api/v2/products/{id}` - Actualizar producto
+- `DELETE /api/v2/products/{id}` - Eliminar producto
+- `POST /api/v2/categories` - Crear categoría
+- `PUT /api/v2/categories/{id}` - Actualizar categoría
+- `DELETE /api/v2/categories/{id}` - Eliminar categoría
+- `POST /api/v2/images/upload` - Subir imagen
+- `DELETE /api/v2/images/{id}` - Eliminar imagen
+- `POST /api/v2/stock/{productId}` - Registrar ingreso de stock
+- `GET /api/v2/reports/low-stock` - Reporte de stock bajo
 
 ## Endpoints
 
@@ -49,7 +86,7 @@ Obtener lista de productos con paginación, filtros y ordenamiento.
   "data": {
     "products": [
       {
-        "id": 1,
+        "id_producto": 1,
         "nombre_producto": "Producto Ejemplo",
         "precio": 99.99,
         "descripcion": "Descripción del producto",
@@ -59,8 +96,11 @@ Obtener lista de productos con paginación, filtros y ordenamiento.
         "imagenes": [
           {
             "id": 1,
-            "url_imagen": "https://example.com/image.jpg",
-            "es_principal": true
+            "product_id": 1,
+            "image_url": "https://storage.example.com/images/producto_1.jpg",
+            "storage_path": "productos/producto_1.jpg",
+            "is_primary": true,
+            "created_at": "2025-04-25T10:30:00Z"
           }
         ]
       }
@@ -88,7 +128,7 @@ Obtener un producto específico con sus imágenes.
 {
   "success": true,
   "data": {
-    "id": 1,
+    "id_producto": 1,
     "nombre_producto": "Producto Ejemplo",
     "precio": 99.99,
     "descripcion": "Descripción del producto",
@@ -98,8 +138,11 @@ Obtener un producto específico con sus imágenes.
     "imagenes": [
       {
         "id": 1,
-        "url_imagen": "https://example.com/image.jpg",
-        "es_principal": true
+        "product_id": 1,
+        "image_url": "https://storage.example.com/images/producto_1.jpg",
+        "storage_path": "productos/producto_1.jpg",
+        "is_primary": true,
+        "created_at": "2025-04-25T10:30:00Z"
       }
     ]
   }
@@ -131,8 +174,11 @@ Crear un nuevo producto con imágenes opcionales.
     "images": [
       {
         "id": 456,
-        "url_imagen": "https://storage.example.com/products/image.jpg",
-        "es_principal": true
+        "product_id": 123,
+        "image_url": "https://storage.example.com/images/producto_123.jpg",
+        "storage_path": "productos/producto_123.jpg",
+        "is_primary": true,
+        "created_at": "2025-04-25T10:30:00Z"
       }
     ]
   }
@@ -187,6 +233,119 @@ Eliminar un producto.
 }
 ```
 
+### Stock
+
+#### POST /stock/{productId}
+Registrar un nuevo ingreso de stock para un producto. Actualiza automáticamente el precio del producto basado en el costo unitario y porcentaje de venta.
+
+**Path Parameters:**
+- `productId` (number, required): ID del producto
+
+**Headers:**
+- `Authorization: Bearer <token>` (requerido)
+- `Content-Type: application/json`
+
+**Body:**
+```json
+{
+  "cantidad_ingresada": 10,
+  "codigo_factura": "FAC-001-2025",
+  "costo_total": 5000.00,
+  "costo_unitario": 500.00,
+  "porcentaje_venta": 30,
+  "id_usuario": 1,
+  "fecha_vencimiento": "2025-12-31"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Stock registrado con éxito"
+}
+```
+
+#### GET /stock/{productId}
+Obtener información de stock de un producto específico.
+
+**Path Parameters:**
+- `productId` (number, required): ID del producto
+
+**Response:**
+```json
+{
+  "id_registro": 1,
+  "id_producto": 1,
+  "cantidad_ingresada": 10,
+  "codigo_factura": "FAC-001-2025",
+  "costo_total": 5000.00,
+  "costo_unitario": 500.00,
+  "porcentaje_venta": 30,
+  "fecha_ingreso": "2025-04-25T10:30:00Z",
+  "id_usuario": 1,
+  "nombre_producto": "Laptop Gaming"
+}
+```
+
+#### GET /stock/history
+Obtener historial de ingresos de stock.
+
+**Query Parameters:**
+- `page` (number, optional): Página (default: 1)
+- `limit` (number, optional): Límite (default: 10, max: 100)
+- `product_id` (number, optional): Filtrar por producto
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id_registro": 1,
+      "id_producto": 1,
+      "cantidad_ingresada": 10,
+      "codigo_factura": "FAC-001-2025",
+      "costo_total": 5000.00,
+      "costo_unitario": 500.00,
+      "porcentaje_venta": 30,
+      "fecha_ingreso": "2025-04-25T10:30:00Z",
+      "id_usuario": 1,
+      "nombre_producto": "Laptop Gaming"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 50,
+    "totalPages": 5
+  }
+}
+```
+
+### Reportes
+
+#### GET /reports/low-stock
+Obtener productos con stock bajo (menor al umbral especificado).
+
+**Headers:**
+- `Authorization: Bearer <token>` (requerido)
+
+**Query Parameters:**
+- `umbral` (number, optional): Umbral de stock (default: 15)
+
+**Response:**
+```json
+[
+  {
+    "id_producto": 1,
+    "nombre_producto": "Producto con stock bajo",
+    "precio": 99.99,
+    "cantidad_ingreso": 10,
+    "id_categoria": 1
+  }
+]
+```
+
 ## Códigos de Estado
 
 | Código | Descripción |
@@ -200,6 +359,19 @@ Eliminar un producto.
 | 409 | Conflicto de datos |
 | 422 | Error de validación detallado |
 | 500 | Error interno del servidor |
+
+## Códigos de Error Supabase
+
+La API utiliza Supabase como capa de persistencia. Los siguientes códigos de error pueden aparecer en las respuestas:
+
+| Código | Descripción | HTTP Status |
+|--------|-------------|-------------|
+| `PGRST116` | Recurso no encontrado | 404 |
+| `23505` | Violación de constraint único (duplicado) | 409 |
+| `23503` | Violación de foreign key | 400 |
+| `22P02` | Tipo de dato inválido | 400 |
+
+**Nota**: El código `PGRST116` se retorna cuando se usa `.single()` en Supabase y no se encuentra el registro.
 
 ## Errores
 
@@ -276,16 +448,50 @@ curl -X POST https://api.example.com/api/v2/products \
 4. **Imágenes**: Use compresión y formatos optimizados (WebP)
 5. **Concurrencia**: Evite múltiples solicitudes simultáneas del mismo recurso
 
-## Cambios Recientes (v2)
+## Cambios Recientes
 
+### Abril 2025 - Migración a Supabase
+- ✅ **Migración completa a Supabase**: Todos los repositorios ahora usan el cliente oficial de Supabase
+- ✅ **Unificación de documentación**: Consolidación de swagger.yaml como fuente única de verdad
+- ✅ **Actualización de DTOs**: Campos de imagen actualizados (`is_primary`, `storage_path`, `image_url`)
+- ✅ **Documentación Scalar mejorada**: Configuración con branding, dark mode y metadatos
+- ✅ **Endpoints de stock documentados**: Registro de ingresos con cálculo automático de precios
+- ✅ **Endpoint de reportes**: `/reports/low-stock` para productos con stock bajo
+
+### Features Estables
 - ✅ DTOs estandarizados con interfaces TypeScript puras
 - ✅ Validaciones centralizadas y robustas
-- ✅ Manejo de errores unificado
-- ✅ Caché inteligente con invalidación automática
-- ✅ Paginación y filtrado eficiente
-- ✅ Arquitectura SOLID con patrón Strategy
-- ✅ Optimización de consultas a base de datos
-- ✅ Separación de responsabilidades clara
+- ✅ Manejo de errores unificado (códigos Supabase)
+- ✅ Arquitectura SOLID con patrón Repository
+- ✅ Autenticación JWT con roles (ADMINISTRADOR)
+- ✅ Upload de imágenes a Supabase Storage
+
+## Arquitectura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        API Layer                             │
+│  Routes → Controllers → Middleware (Auth/Validation)        │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                      Service Layer                           │
+│  ProductService → ProductImageService → CategoriaService      │
+│  StockService → ReportService → ImageService                │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   Repository Layer                           │
+│  ProductRepository → CategoriaRepository → StockRepository  │
+│  ProductImageRepository → ReportsRepository                 │
+│                    (Supabase Client)                        │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                   Supabase Platform                          │
+│  PostgreSQL Database + Storage + Auth                        │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Soporte
 

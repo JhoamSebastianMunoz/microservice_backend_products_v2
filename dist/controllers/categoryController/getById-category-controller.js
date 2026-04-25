@@ -15,8 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const categoriaService_1 = __importDefault(require("../../services/categoriaService"));
 let get_category = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { id_categoria } = req.params;
-        const result = yield categoriaService_1.default.getCategoriaById(Number(id_categoria));
+        const { id } = req.params;
+        const result = yield categoriaService_1.default.getCategoriaById(Number(id));
         if (!result) {
             return res.status(404).json({ message: 'Categoria no encontrada' });
         }
