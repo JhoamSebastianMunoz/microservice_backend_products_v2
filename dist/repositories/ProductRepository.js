@@ -40,7 +40,8 @@ class ProductRepository {
                 .select(`
                 *,
                 categorias(nombre_categoria)
-            `);
+            `)
+                .order('id_producto', { ascending: false });
             if (error)
                 throw error;
             // Transformar los datos para que coincidan con la estructura esperada

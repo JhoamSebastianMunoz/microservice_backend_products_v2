@@ -24,8 +24,9 @@ function uploadMultipleImagesMiddleware(req, res, next) {
             return res.status(500).json({ message: "Error al procesar las imágenes", error: err.message });
         }
         const files = req.files;
+        // Las imágenes son opcionales - si no hay archivos, continuar
         if (!files || files.length === 0) {
-            return res.status(400).json({ message: "No se proporcionaron imágenes." });
+            return next();
         }
         // Validar formato de cada archivo
         const invalidFiles = files.filter(file => !allowedMimeTypes.includes(file.mimetype));

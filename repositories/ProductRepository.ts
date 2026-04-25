@@ -29,7 +29,8 @@ class ProductRepository {
             .select(`
                 *,
                 categorias(nombre_categoria)
-            `);
+            `)
+            .order('id_producto', { ascending: false });
         
         if (error) throw error;
         

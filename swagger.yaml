@@ -130,6 +130,11 @@ components:
           format: date-time
           description: Fecha de última actualización
           readOnly: true
+        imagenes:
+          type: array
+          description: Lista de imágenes asociadas al producto
+          items:
+            $ref: '#/components/schemas/ImagenV2'
 
     CategoriaV2:
       type: object
@@ -225,15 +230,15 @@ components:
     RespuestaExitosa:
       type: object
       properties:
-        exito:
+        success:
           type: boolean
           description: Estado de la operación
           example: true
-        mensaje:
+        message:
           type: string
           description: Mensaje de éxito
           example: "Operación realizada con éxito"
-        datos:
+        data:
           type: object
           description: Datos de la respuesta
         timestamp:
@@ -245,15 +250,33 @@ components:
     RespuestaErrorV2:
       type: object
       properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          description: Mensaje de error detallado
+          example: "Datos de entrada inválidos"
         error:
           type: string
           description: Tipo de error
           example: "ValidationError"
-        mensaje:
+        details:
           type: string
-          description: Mensaje de error detallado
-          example: "Datos de entrada inválidos"
-        estado:
+          description: Detalles adicionales del error
+        errors:
+          type: array
+          description: Lista de errores de validación
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+              value:
+                type: string
+        statusCode:
           type: integer
           description: Código de estado HTTP
           example: 400
@@ -266,12 +289,12 @@ components:
     InformacionPaginacion:
       type: object
       properties:
-        pagina:
+        page:
           type: integer
           description: Número de página actual
           example: 1
           minimum: 1
-        limite:
+        limit:
           type: integer
           description: Elementos por página
           example: 10
@@ -282,7 +305,7 @@ components:
           description: Total de elementos
           example: 150
           minimum: 0
-        totalPaginas:
+        totalPages:
           type: integer
           description: Total de páginas
           example: 15
@@ -299,14 +322,17 @@ components:
     RespuestaPaginada:
       type: object
       properties:
-        exito:
+        success:
           type: boolean
           example: true
-        datos:
+        message:
+          type: string
+          example: "Operación exitosa"
+        data:
           type: array
           items:
             type: object
-        paginacion:
+        pagination:
           $ref: '#/components/schemas/InformacionPaginacion'
         timestamp:
           type: string
@@ -325,13 +351,12 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
               required:
                 - nombre_producto
                 - precio
-                - id_categoria
               properties:
                 nombre_producto:
                   type: string
@@ -358,8 +383,18 @@ paths:
                 id_categoria:
                   type: integer
                   minimum: 1
-                  description: Identificador de categoría
+                  description: Identificador de categoría (opcional)
                   example: 1
+                primary_image_index:
+                  type: integer
+                  description: Índice de la imagen principal (0-based, opcional)
+                  example: 0
+                images:
+                  type: array
+                  description: Archivos de imagen adjuntos (máx 5, opcional)
+                  items:
+                    type: string
+                    format: binary
       responses:
         '201':
           description: Producto creado exitosamente
@@ -370,7 +405,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaExitosa'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         $ref: '#/components/schemas/ProductoV2'
         '400':
           description: Solicitud incorrecta
@@ -452,7 +487,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaPaginada'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         type: array
                         items:
                           $ref: '#/components/schemas/ProductoV2'
@@ -487,7 +522,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaExitosa'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         $ref: '#/components/schemas/ProductoV2'
         '404':
           description: Producto no encontrado
@@ -546,10 +581,16 @@ paths:
                   minimum: 1
                   description: Identificador de categoría
                   example: 2
-                id_imagen:
-                  type: string
-                  description: Identificador de imagen
-                  example: "imagen-actualizada-456"
+                primary_image_index:
+                  type: integer
+                  description: Índice de la imagen principal (0-based) para imágenes nuevas
+                  example: 0
+                delete_images:
+                  type: array
+                  description: IDs de imágenes existentes a eliminar
+                  items:
+                    type: integer
+                  example: [1, 2]
       responses:
         '200':
           description: Producto actualizado exitosamente
@@ -560,7 +601,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaExitosa'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         $ref: '#/components/schemas/ProductoV2'
         '400':
           description: Solicitud incorrecta
@@ -673,7 +714,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaExitosa'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         $ref: '#/components/schemas/CategoriaV2'
         '400':
           description: Solicitud incorrecta
@@ -731,7 +772,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaPaginada'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         type: array
                         items:
                           $ref: '#/components/schemas/CategoriaV2'
@@ -766,7 +807,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaExitosa'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         $ref: '#/components/schemas/CategoriaV2'
         '404':
           description: Categoría no encontrada
@@ -824,7 +865,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaExitosa'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         $ref: '#/components/schemas/CategoriaV2'
         '400':
           description: Solicitud incorrecta
@@ -930,7 +971,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaExitosa'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         $ref: '#/components/schemas/ImageV2'
         '400':
           description: Solicitud incorrecta (formato o tamaño de archivo inválido)
@@ -974,7 +1015,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaExitosa'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         $ref: '#/components/schemas/ImagenV2'
         '404':
           description: Imagen no encontrada
@@ -1054,7 +1095,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaExitosa'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         $ref: '#/components/schemas/StockV2'
         '404':
           description: Producto no encontrado
@@ -1111,7 +1152,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaExitosa'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         $ref: '#/components/schemas/StockV2'
         '400':
           description: Solicitud incorrecta
@@ -1183,7 +1224,7 @@ paths:
                   - $ref: '#/components/schemas/RespuestaPaginada'
                   - type: object
                     properties:
-                      datos:
+                      data:
                         type: array
                         items:
                           $ref: '#/components/schemas/StockV2'

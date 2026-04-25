@@ -25,8 +25,9 @@ function uploadMultipleImagesMiddleware(req: Request, res: Response, next: NextF
 
         const files = req.files as Express.Multer.File[];
 
+        // Las imágenes son opcionales - si no hay archivos, continuar
         if (!files || files.length === 0) {
-            return res.status(400).json({ message: "No se proporcionaron imágenes." });
+            return next();
         }
 
         // Validar formato de cada archivo
