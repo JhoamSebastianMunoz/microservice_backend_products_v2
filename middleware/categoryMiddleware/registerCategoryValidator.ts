@@ -6,8 +6,16 @@ let validatorParams = [
         .isLength({ min: 3, max: 100 })
         .withMessage("El nombre de la categoría debe tener entre 3 y 100 caracteres.")
         .bail()
-        .matches(/^[A-Za-z\s]+$/)
+        .matches(/^[\p{L}\s]+$/u)
         .withMessage("El nombre de la categoría solo puede contener letras y espacios.")
+        .bail(),
+    check("descripcion")
+        .optional()
+        .isLength({ min: 3, max: 255 })
+        .withMessage("La descripción debe tener entre 3 y 255 caracteres.")
+        .bail()
+        .matches(/^[\p{L}\s]+$/u)
+        .withMessage("La descripción solo puede contener letras y espacios.")
         .bail(),
 ];
 

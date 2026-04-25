@@ -16,8 +16,8 @@ const CategoriaDto_1 = __importDefault(require("../../Dto/productDto/CategoriaDt
 const categoriaService_1 = __importDefault(require("../../services/categoriaService"));
 let register_category = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { nombre_categoria } = req.body;
-        yield categoriaService_1.default.createCategoria(new CategoriaDto_1.default(nombre_categoria));
+        const { nombre_categoria, descripcion } = req.body;
+        yield categoriaService_1.default.createCategoria(new CategoriaDto_1.default(nombre_categoria, descripcion));
         return res.status(201).json({ status: 'Categoria registrado con éxito' });
     }
     catch (error) {

@@ -12,7 +12,8 @@ CREATE TYPE estado_cliente AS ENUM ('Activo', 'Inactivo');
 CREATE TABLE categorias (
     id_categoria SERIAL PRIMARY KEY,
     nombre_categoria VARCHAR(100) NOT NULL,
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    nombre_categoria VARCHAR(100) NULL,
 );
 
 -- Tabla productos

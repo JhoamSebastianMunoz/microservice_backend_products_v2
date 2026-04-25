@@ -41,9 +41,13 @@ class CategoriaRepository {
     }
     static add(categoria) {
         return __awaiter(this, void 0, void 0, function* () {
+            const insertData = { nombre_categoria: categoria.nombre_categoria };
+            if (categoria.descripcion) {
+                insertData.descripcion = categoria.descripcion;
+            }
             const { data, error } = yield config_supabaseStorage_1.default
                 .from('categorias')
-                .insert([{ nombre_categoria: categoria.nombre_categoria }])
+                .insert([insertData])
                 .select('*');
             if (error)
                 throw error;
@@ -52,9 +56,13 @@ class CategoriaRepository {
     }
     static update(id, categoria) {
         return __awaiter(this, void 0, void 0, function* () {
+            const updateData = { nombre_categoria: categoria.nombre_categoria };
+            if (categoria.descripcion) {
+                updateData.descripcion = categoria.descripcion;
+            }
             const { data, error } = yield config_supabaseStorage_1.default
                 .from('categorias')
-                .update({ nombre_categoria: categoria.nombre_categoria })
+                .update(updateData)
                 .eq('id_categoria', id)
                 .select('*');
             if (error)

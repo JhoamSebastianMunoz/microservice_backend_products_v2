@@ -4,6 +4,7 @@ import Categoria from '../Dto/productDto/CategoriaDto';
 interface CategoriaRow {
     id_categoria: number;
     nombre_categoria: string;
+    descripcion?: string;
 }
 
 class CategoriaRepository {
@@ -32,9 +33,13 @@ class CategoriaRepository {
     }
     
     static async add(categoria: Categoria): Promise<CategoriaRow> {
+        const insertData: any = { nombre_categoria: categoria.nombre_categoria };
+        if (categoria.descripcion) {
+            insertData.descripcion = categoria.descripcion;
+        }
         const { data, error } = await supabaseClient
             .from('categorias')
-            .insert([{ nombre_categoria: categoria.nombre_categoria }])
+            .insert([insertData])
             .select('*');
         
         if (error) throw error;
@@ -42,9 +47,13 @@ class CategoriaRepository {
     }
     
     static async update(id: number, categoria: Categoria): Promise<boolean> {
+        const updateData: any = { nombre_categoria: categoria.nombre_categoria };
+        if (categoria.descripcion) {
+            updateData.descripcion = categoria.descripcion;
+        }
         const { data, error } = await supabaseClient
             .from('categorias')
-            .update({ nombre_categoria: categoria.nombre_categoria })
+            .update(updateData)
             .eq('id_categoria', id)
             .select('*');
         

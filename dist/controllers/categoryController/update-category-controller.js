@@ -17,8 +17,8 @@ const CategoriaDto_1 = __importDefault(require("../../Dto/productDto/CategoriaDt
 let update_category = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { id } = req.params;
-        const { nombre_categoria } = req.body;
-        const result = yield categoriaService_1.default.updateCategoria(new CategoriaDto_1.default(nombre_categoria), Number(id));
+        const { nombre_categoria, descripcion } = req.body;
+        const result = yield categoriaService_1.default.updateCategoria(new CategoriaDto_1.default(nombre_categoria, descripcion), Number(id));
         if (!result) {
             return res.status(404).json({ error: "Categoria no encontrada." });
         }

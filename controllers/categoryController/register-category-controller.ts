@@ -4,8 +4,8 @@ import CategoriaService from "../../services/categoriaService";
 
 let register_category = async (req: Request, res: Response) => {  
   try {
-    const { nombre_categoria } = req.body;
-    await CategoriaService.createCategoria(new Categoria(nombre_categoria))
+    const { nombre_categoria, descripcion } = req.body;
+    await CategoriaService.createCategoria(new Categoria(nombre_categoria, descripcion))
     
     return res.status(201).json(
       { status: 'Categoria registrado con éxito'}
